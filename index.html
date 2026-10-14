@@ -20,8 +20,18 @@ h1,h2,h3{font-family:var(--serif);margin:0}
 .top nav a{color:#e9dcb8;text-decoration:none;margin-left:20px;font-size:14.5px;text-shadow:0 1px 6px #000a}
 .top nav a:hover{color:#fff}
 .hero{position:relative;min-height:min(86vh,720px);display:flex;align-items:flex-end;background:#0a1322 url(battle-sword.jpg) center/cover no-repeat;overflow:hidden}
-.hero .slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.6s}
-.hero .slide.on{opacity:1}
+.hero video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.eraChip{position:absolute;z-index:3;right:22px;top:76px;background:#0b1428cc;border:1px solid var(--gold);color:var(--gold2);font-weight:800;font-size:13.5px;padding:5px 14px;border-radius:99px;transition:opacity .4s}
+.lang{margin-inline-start:18px;background:#0b1428cc;color:#e9dcb8;border:1px solid var(--line);border-radius:5px;padding:5px 8px;font:inherit;font-size:13.5px;cursor:pointer}
+[dir=rtl] .top nav a{margin-left:0;margin-right:20px}
+[dir=rtl] .rule{background:linear-gradient(270deg,var(--gold),transparent 40%)}
+[dir=rtl] .mapbox::before{background:linear-gradient(270deg,#0a1322e8 0%,#0a1322b0 55%,#0a132255 100%)}
+[dir=rtl] .steps li{padding:13px 54px 13px 16px}[dir=rtl] .steps li::before{left:auto;right:15px}
+[dir=rtl] .feat{border-left:1px solid var(--line);border-right:3px solid var(--gold)}
+[dir=rtl] .eraChip{right:auto;left:22px}
+[dir=rtl] .latest .ver small{margin-left:0;margin-right:10px}
+[dir=rtl] .vrow a.get,[dir=rtl] .vrow a.try{margin-left:0;margin-right:6px}
+[dir=rtl] .note ul{padding-left:0;padding-right:20px}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#0a132299 0%,#0a132233 35%,#0a1322ee 88%,#0a1322 100%)}
 .hero .in{position:relative;z-index:2;padding:130px 22px 44px;width:100%}
 .hero h1{font-size:clamp(46px,9vw,98px);font-weight:900;line-height:1;letter-spacing:-.01em;color:#f6ecd0;text-shadow:0 4px 24px #000c}
@@ -63,7 +73,7 @@ section h2{font-size:27px;font-weight:900}
 .vrow .t{font-weight:800}.vrow .s{color:var(--muted);font-size:15px;margin-top:2px}
 .vrow a.get,.vrow a.try{text-decoration:none;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 14px;border-radius:5px;font-weight:700;font-size:14.5px;white-space:nowrap;margin-left:6px}
 .vrow a.get:hover,.vrow a.try:hover{border-color:var(--gold)}
-@media(max-width:620px){.vrow{grid-template-columns:1fr;gap:6px}.top nav{display:none}.hero .in{padding-top:100px}}
+@media(max-width:620px){.vrow{grid-template-columns:1fr;gap:6px}.top nav a{display:none}.top nav{display:flex}.lang{margin:0}.eraChip{top:70px;right:16px}.hero .in{padding-top:100px}}
 .note{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:14px 18px 12px;margin-bottom:10px}
 .note .nh{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}.note .nt{font-weight:800;font-size:17px}.note .nd{color:var(--muted);font-size:13.5px}
 .note ul{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:15.5px}.note li{margin:3px 0}
@@ -80,114 +90,145 @@ footer{margin:60px 0 40px;color:var(--muted);font-size:14px;border-top:1px solid
 </style>
 </head>
 <body>
-<div class="top"><div class="wrap"><div class="mark">Crown <b>Envoy</b></div><nav><a href="#play">플레이</a><a href="#eras">전장</a><a href="#scenarios">시나리오</a><a href="#versions">버전</a><a href="#notes">패치노트</a><a href="#help">도움말</a></nav></div></div>
+<div class="top"><div class="wrap"><div class="mark">Crown <b>Envoy</b></div><nav><a href="#play" data-i="n_play"></a><a href="#eras" data-i="n_eras"></a><a href="#scenarios" data-i="n_scen"></a><a href="#versions" data-i="n_ver"></a><a href="#notes" data-i="n_notes"></a><a href="#help" data-i="n_help"></a><select class="lang" id="langSel" aria-label="Language"></select></nav></div></div>
 
 <header class="hero" id="play">
-  <div class="slide on" style="background-image:url(battle-sword.jpg)"></div><div class="slide" style="background-image:url(battle-pike.jpg)"></div><div class="slide" style="background-image:url(battle-musket.jpg)"></div><div class="slide" style="background-image:url(battle-rifle.jpg)"></div><div class="slide" style="background-image:url(battle-ww2.jpg)"></div>
+  <video id="heroVid" autoplay muted loop playsinline preload="auto" poster="battle-sword.jpg"><source src="hero.mp4" type="video/mp4"></video>
+  <div class="eraChip" id="eraChip"></div>
   <div class="wrap in">
     <h1>Crown Envoy</h1>
     <div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div>
-    <p>사절을 보내 동맹을 맺고, 군대를 보내 왕관을 차지하세요. 설치 없이 브라우저에서 바로, 링크 하나로 친구와 같은 판에서 붙어요.</p>
+    <p data-i="hero_p">사절을 보내 동맹을 맺고, 군대를 보내 왕관을 차지하세요. 설치 없이 브라우저에서 바로, 링크 하나로 친구와 같은 판에서 붙어요.</p>
     <div class="cta">
-      <a class="btn play" id="playBtn" href="CrownEnvoy-latest.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>바로 플레이</a>
-      <a class="btn dl" id="dlBtn" href="CrownEnvoy-latest.html" download="CrownEnvoy-latest.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>다운로드</a>
+      <a class="btn play" id="playBtn" href="CrownEnvoy-v0.1.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg><span data-i="b_play"></span></a>
+      <a class="btn dl" id="dlBtn" href="CrownEnvoy-v0.1.html" download="CrownEnvoy-v0.1.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg><span data-i="b_dl"></span></a>
     </div>
-    <div class="meta" id="heroMeta">최신 버전 불러오는 중…</div>
+    <div class="meta" id="heroMeta" data-i="loading"></div>
   </div>
 </header>
 
 <div class="wrap">
   <section>
-    <h2>이런 게임이에요</h2><hr class="rule">
+    <h2 data-i="f_h2"></h2><hr class="rule">
     <div class="features">
-      <div class="feat"><div class="ic">🗺️</div><h3>유럽 전장</h3><p>수백 개 영토로 나뉜 지도 위에서 병력을 배치하고 국경을 넓혀요.</p></div>
-      <div class="feat"><div class="ic">📜</div><h3>깊은 외교</h3><p>동맹·불가침·무역·군사 통행, 속국과 연합, 최후통첩과 영토 교환까지.</p></div>
-      <div class="feat"><div class="ic">⚔️</div><h3>시대별 전투</h3><p>검과 창에서 머스킷, 대포, 전차까지. 시대마다 달라지는 전투 연출.</p></div>
-      <div class="feat"><div class="ic">🌐</div><h3>친구와 바로</h3><p>온라인 자동 매칭, 코드로 만나는 비공개 방, 혼자 즐기는 AI 대전.</p></div>
+      <div class="feat"><div class="ic">🗺️</div><h3 data-i="f1h"></h3><p data-i="f1p"></p></div>
+      <div class="feat"><div class="ic">📜</div><h3 data-i="f2h"></h3><p data-i="f2p"></p></div>
+      <div class="feat"><div class="ic">⚔️</div><h3 data-i="f3h"></h3><p data-i="f3p"></p></div>
+      <div class="feat"><div class="ic">🌐</div><h3 data-i="f4h"></h3><p data-i="f4p"></p></div>
     </div>
   </section>
 
   <section id="eras">
-    <h2>시대마다 다른 전장</h2><hr class="rule">
+    <h2 data-i="e_h2"></h2><hr class="rule">
     <div class="shots">
-      <div class="shot"><img src="battle-sword.jpg" alt="" loading="lazy"><span>검과 창</span></div>
-      <div class="shot"><img src="battle-pike.jpg" alt="" loading="lazy"><span>장창과 화승총</span></div>
-      <div class="shot"><img src="battle-musket.jpg" alt="" loading="lazy"><span>머스킷과 대포</span></div>
-      <div class="shot"><img src="battle-rifle.jpg" alt="" loading="lazy"><span>소총·기관총·비행기</span></div>
-      <div class="shot"><img src="battle-ww2.jpg" alt="" loading="lazy"><span>전차와 야포</span></div>
+      <div class="shot"><img src="battle-sword.jpg" alt="" loading="lazy"><span data-i="e1"></span></div>
+      <div class="shot"><img src="battle-pike.jpg" alt="" loading="lazy"><span data-i="e2"></span></div>
+      <div class="shot"><img src="battle-musket.jpg" alt="" loading="lazy"><span data-i="e3"></span></div>
+      <div class="shot"><img src="battle-rifle.jpg" alt="" loading="lazy"><span data-i="e4"></span></div>
+      <div class="shot"><img src="battle-ww2.jpg" alt="" loading="lazy"><span data-i="e5"></span></div>
     </div>
   </section>
 
   <section id="scenarios">
-    <h2>역사 시나리오</h2><hr class="rule">
-    <div class="mapbox"><div class="in"><p>고대부터 현대까지 16개의 역사 템플릿이 준비돼 있어요. 지도만 고르고 시작할 수도, 시나리오 편집기로 나만의 판을 만들 수도 있어요.</p><div class="tpls"><div class="tpl"><b>BC 218</b><span>제2차 포에니 전쟁</span></div><div class="tpl"><b>229</b><span>삼국지</span></div><div class="tpl"><b>1492</b><span>대항해시대</span></div><div class="tpl"><b>1592</b><span>임진왜란</span></div><div class="tpl"><b>1618</b><span>30년 전쟁</span></div><div class="tpl"><b>1701</b><span>스페인 왕위 계승 전쟁</span></div><div class="tpl"><b>1775</b><span>미국 독립 전쟁</span></div><div class="tpl"><b>1803</b><span>나폴레옹 전쟁</span></div><div class="tpl"><b>1853</b><span>크림 전쟁</span></div><div class="tpl"><b>1861</b><span>미국 남북 전쟁</span></div><div class="tpl"><b>1864</b><span>독일 통일 전쟁</span></div><div class="tpl"><b>1914</b><span>제1차 세계 대전</span></div><div class="tpl"><b>1939</b><span>제2차 세계 대전</span></div><div class="tpl"><b>1950</b><span>한국 전쟁</span></div><div class="tpl"><b>2026</b><span>현대 유럽</span></div><div class="tpl"><b>1500</b><span>삼국 대륙</span></div></div></div></div>
+    <h2 data-i="s_h2"></h2><hr class="rule">
+    <div class="mapbox"><div class="in"><p data-i="s_p">고대부터 현대까지 16개의 역사 템플릿이 준비돼 있어요. 지도만 고르고 시작할 수도, 시나리오 편집기로 나만의 판을 만들 수도 있어요.</p><div class="tpls"><div class="tpl"><b>BC 218</b><span data-i="t0"></span></div><div class="tpl"><b>229</b><span data-i="t1"></span></div><div class="tpl"><b>1492</b><span data-i="t2"></span></div><div class="tpl"><b>1592</b><span data-i="t3"></span></div><div class="tpl"><b>1618</b><span data-i="t4"></span></div><div class="tpl"><b>1701</b><span data-i="t5"></span></div><div class="tpl"><b>1775</b><span data-i="t6"></span></div><div class="tpl"><b>1803</b><span data-i="t7"></span></div><div class="tpl"><b>1853</b><span data-i="t8"></span></div><div class="tpl"><b>1861</b><span data-i="t9"></span></div><div class="tpl"><b>1864</b><span data-i="t10"></span></div><div class="tpl"><b>1914</b><span data-i="t11"></span></div><div class="tpl"><b>1939</b><span data-i="t12"></span></div><div class="tpl"><b>1950</b><span data-i="t13"></span></div><div class="tpl"><b>2026</b><span data-i="t14"></span></div><div class="tpl"><b>1500</b><span data-i="t15"></span></div></div></div></div>
   </section>
 
   <section id="versions">
-    <h2>버전</h2><hr class="rule">
+    <h2 data-i="v_h2"></h2><hr class="rule">
     <div id="latestBox"></div>
-    <h3 style="margin:26px 0 4px;font-size:19px">지난 버전</h3>
+    <h3 style="margin:26px 0 4px;font-size:19px" data-i="v_past"></h3>
     <div id="historyBox"></div>
   </section>
 
   <section id="notes">
-    <h2>패치노트</h2><hr class="rule">
+    <h2 data-i="n_h2"></h2><hr class="rule">
     <div id="notesBox"></div>
-    <button id="notesMore" style="display:none">이전 패치노트 더 보기</button>
+    <button id="notesMore" style="display:none" data-i="n_more"></button>
   </section>
 
   <section id="help">
-    <h2>시작하는 법</h2><hr class="rule">
+    <h2 data-i="h_h2"></h2><hr class="rule">
     <ol class="steps">
-      <li><b>바로 플레이</b>를 누르면 이 사이트에서 곧바로 게임이 열려요. 설치가 필요 없어요.</li>
-      <li><b>온라인 플레이</b>로 자동 매칭하거나, <b>비공개 플레이</b>에서 방을 만들어 5자리 코드를 친구에게 알려 줘요.</li>
-      <li>파일로 갖고 싶다면 <b>다운로드</b>해서 더블클릭으로 열면 돼요(온라인 플레이는 인터넷 연결이 필요해요).</li>
+      <li data-i="h1"></li>
+      <li data-i="h2"></li>
+      <li data-i="h3"></li>
     </ol>
-    <div class="tip"><b>친구와 같은 버전으로 하세요.</b> 서로 다른 버전이면 방에 들어가지 못하거나 화면이 다를 수 있어요. 모두 이 사이트의 <b>바로 플레이</b>로 들어오면 항상 같은 최신 버전이에요.</div>
+    <div class="tip" data-i="tip"></div>
   </section>
 
   <section>
-    <h2>자주 묻는 질문</h2><hr class="rule">
-    <details><summary>다운로드한 파일은 어떻게 여나요?</summary><p>더블클릭하면 브라우저(크롬·엣지·사파리·파이어폭스)에서 열려요. 별도 설치가 없어요.</p></details>
-    <details><summary>저장된 게임은 어디에 있나요?</summary><p>쓰고 있는 브라우저 안에 저장돼요. 사이트 주소가 바뀌거나 파일로 열면 별도의 저장 공간이라 따로 시작해요.</p></details>
-    <details><summary>휴대폰에서도 되나요?</summary><p>네, 화면 크기에 맞춰 열려요. 다만 넓은 지도를 다루는 게임이라 태블릿이나 컴퓨터가 더 편해요.</p></details>
-    <details><summary>왜 옛 버전도 있나요?</summary><p>예전 버전을 다시 해 보고 싶을 때를 위해 남겨 뒀어요. 친구와 함께 하려면 같은 버전을 쓰세요.</p></details>
+    <h2 data-i="q_h2"></h2><hr class="rule">
+    <details><summary data-i="q1"></summary><p data-i="a1"></p></details>
+    <details><summary data-i="q2"></summary><p data-i="a2"></p></details>
+    <details><summary data-i="q3"></summary><p data-i="a3"></p></details>
+    <details><summary data-i="q4"></summary><p data-i="a4"></p></details>
   </section>
 
-  <footer>Crown Envoy — 브라우저에서 바로 실행되는 HTML 게임. <span id="footVer"></span></footer>
+  <footer><span data-i="foot"></span> <span id="footVer"></span></footer>
 </div>
 
+<script src="i18n.js"></script>
 <script>
-const FALLBACK={"name": "Crown Envoy", "latest": "0.1", "latestFile": "CrownEnvoy-latest.html", "updated": "2026-10-14", "versions": [{"version": "0.1", "date": "2026-10-14", "file": "CrownEnvoy-v0.1.html", "title": "첫 버전", "summary": "유럽 전장 위에서 펼치는 외교·전쟁 전략. 역사 템플릿 16개, 온라인·비공개·AI 대전, 동맹·속국·연합 외교, 토큰 평화 협상, 시나리오 편집기", "latest": true, "size": 7341885, "sha256": "bdbe6bab7b56"}]};
+const FALLBACK={"name": "Crown Envoy", "latest": "0.1", "latestFile": "CrownEnvoy-v0.1.html", "updated": "2026-10-14", "versions": [{"version": "0.1", "date": "2026-10-14", "file": "CrownEnvoy-v0.1.html", "title": "첫 버전", "summary": "유럽 전장 위에서 펼치는 외교·전쟁 전략. 역사 템플릿 16개, 온라인·비공개·AI 대전, 동맹·속국·연합 외교, 토큰 평화 협상, 시나리오 편집기", "latest": true, "size": 7341885, "sha256": "bdbe6bab7b56"}]};
 const NOTES_FALLBACK={"notes": [{"date": "2026-10-14", "build": "v0.1", "title": "Crown Envoy 첫 공개", "items": ["이름이 Crown Envoy로 확정, 인트로와 병사 대전투 로비 배경 추가", "속국 시스템: 템플릿의 속국(부왕령 등)이 시작부터 속국이고, 지도에서 영토를 골라 직접 속국을 만들 수 있어요", "동맹이 되찾은 영토는 원래 주인에게 자동 반환", "최후통첩을 거절하면 자동 선전포고, 거절 뒤 선전포고는 호감도 감소가 적어요", "영토 토큰 방식의 평화 협상, AI도 토큰으로 영토를 요구하고 방어할 수 있어요", "교환 탭: 군사 통행·금화·영토·병력 보내기·선전포고를 맞바꿔요", "같은 민족 호감도·조약 유지 보너스, 보급선 개선, AI 공세 강화", "역사 템플릿 16개와 시나리오 편집기"]}]};
 const dlSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>';
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const mb=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.round(n/1024)+' KB';
+const I=window.I18N||{L:['ko'],D:{},V:{},N:{}};
+const NAMES={ko:'한국어',en:'English',es:'Español',fr:'Français',de:'Deutsch',ja:'日本語',ar:'العربية'};
+function pick(){let s=null;try{s=localStorage.getItem('ce_lang');}catch(e){}
+  if(s&&I.L.includes(s))return s;
+  const c=(navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'ko']);
+  for(const x of c){const b=String(x).toLowerCase().split('-')[0];if(I.L.includes(b))return b;}
+  return 'ko';}
+let LANG=pick(),DATA=FALLBACK,NDATA=NOTES_FALLBACK;
+const t=(k,v)=>{const e=I.D[k];let s=(e&&(e[LANG]||e.ko))||'';if(v)for(const q in v)s=s.split('{'+q+'}').join(v[q]);return s;};
+const tv=(ver,f,ko)=>{const e=I.V[ver];return (e&&e[f]&&(e[f][LANG]||e[f].ko))||ko;};
 function render(d){
+  DATA=d;
   const list=Array.isArray(d.versions)?d.versions:[];
-  if(!list.length){document.getElementById('latestBox').innerHTML='<div class="err">등록된 버전이 없어요.</div>';return;}
+  if(!list.length){document.getElementById('latestBox').innerHTML='<div class="err">'+t('v_none')+'</div>';return;}
   const latest=list.find(v=>v.latest)||list[0],rest=list.filter(v=>v!==latest);
   document.getElementById('playBtn').href=d.latestFile||latest.file;
   const dl=document.getElementById('dlBtn');dl.href=latest.file;dl.setAttribute('download',latest.file.split('/').pop());
-  document.getElementById('heroMeta').innerHTML='최신 버전 <b>v'+esc(latest.version)+'</b> · '+esc(latest.date)+' · '+mb(latest.size);
-  document.getElementById('footVer').textContent='최신 v'+latest.version+' · 업데이트 '+(d.updated||latest.date);
-  document.getElementById('latestBox').innerHTML='<div class="latest"><span class="tag">최신 버전</span><div class="ver">v'+esc(latest.version)+'<small>'+esc(latest.date)+' · '+mb(latest.size)+'</small></div><div class="sum"><b>'+esc(latest.title)+'</b> — '+esc(latest.summary)+'</div><div class="cta" style="margin-top:0"><a class="btn play" href="'+esc(latest.file)+'">플레이</a><a class="btn dl" href="'+esc(latest.file)+'" download="'+esc(latest.file.split('/').pop())+'">'+dlSvg+' 다운로드</a></div></div>';
-  document.getElementById('historyBox').innerHTML=rest.length?rest.map(v=>'<div class="vrow"><div><div class="v">v'+esc(v.version)+'</div><div class="d">'+esc(v.date)+' · '+mb(v.size)+'</div></div><div><div class="t">'+esc(v.title)+'</div><div class="s">'+esc(v.summary)+'</div></div><div><a class="try" href="'+esc(v.file)+'">플레이</a><a class="get" href="'+esc(v.file)+'" download="'+esc(v.file.split('/').pop())+'">'+dlSvg+'</a></div></div>').join(''):'<div style="color:var(--muted)">아직 지난 버전이 없어요.</div>';
+  document.getElementById('heroMeta').innerHTML=t('meta',{v:esc(latest.version),d:esc(latest.date),s:mb(latest.size)});
+  document.getElementById('footVer').textContent=t('foot_v',{v:latest.version,d:d.updated||latest.date});
+  const ti=v=>esc(tv(v.version,'title',v.title)),su=v=>esc(tv(v.version,'summary',v.summary));
+  document.getElementById('latestBox').innerHTML='<div class="latest"><span class="tag">'+t('v_latest')+'</span><div class="ver">v'+esc(latest.version)+'<small>'+esc(latest.date)+' · '+mb(latest.size)+'</small></div><div class="sum"><b>'+ti(latest)+'</b> — '+su(latest)+'</div><div class="cta" style="margin-top:0"><a class="btn play" href="'+esc(latest.file)+'">'+t('v_play')+'</a><a class="btn dl" href="'+esc(latest.file)+'" download="'+esc(latest.file.split('/').pop())+'">'+dlSvg+' '+t('b_dl')+'</a></div></div>';
+  document.getElementById('historyBox').innerHTML=rest.length?rest.map(v=>'<div class="vrow"><div><div class="v">v'+esc(v.version)+'</div><div class="d">'+esc(v.date)+' · '+mb(v.size)+'</div></div><div><div class="t">'+ti(v)+'</div><div class="s">'+su(v)+'</div></div><div><a class="try" href="'+esc(v.file)+'">'+t('v_play')+'</a><a class="get" href="'+esc(v.file)+'" download="'+esc(v.file.split('/').pop())+'">'+dlSvg+'</a></div></div>').join(''):'<div style="color:var(--muted)">'+t('v_nopast')+'</div>';
 }
-render(FALLBACK);
 const NOTES_SHOWN=5;
 function renderNotes(d){
+  NDATA=d;
   const list=(d&&Array.isArray(d.notes))?d.notes:[],box=document.getElementById('notesBox'),more=document.getElementById('notesMore');
-  if(!list.length){box.innerHTML='<div style="color:var(--muted)">아직 패치노트가 없어요.</div>';more.style.display='none';return;}
+  if(!list.length){box.innerHTML='<div style="color:var(--muted)">'+t('n_none')+'</div>';more.style.display='none';return;}
   const all=box.dataset.all==='1',shown=all?list:list.slice(0,NOTES_SHOWN);
-  box.innerHTML=shown.map(n=>'<div class="note"><div class="nh"><span class="nt">'+esc(n.title)+'</span><span class="nd">'+esc(n.date)+(n.build?' · '+esc(n.build):'')+'</span></div><ul>'+(n.items||[]).map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul></div>').join('');
+  box.innerHTML=shown.map(n=>{const k=String(n.build||'').replace(/^v/,''),e=I.N[k],tr=e&&e.title&&e.title[LANG];
+    const items=(n.items||[]).map((x,ix)=>{const it=e&&e.items&&e.items[ix];return (it&&it[LANG])||x;});
+    return '<div class="note"><div class="nh"><span class="nt">'+esc(tr||(e&&e.title&&e.title.ko)||n.title)+'</span><span class="nd">'+esc(n.date)+(n.build?' · '+esc(n.build):'')+'</span></div><ul>'+items.map(i=>'<li>'+esc(i)+'</li>').join('')+'</ul></div>';}).join('');
   more.style.display=(!all&&list.length>NOTES_SHOWN)?'':'none';
   more.onclick=()=>{box.dataset.all='1';renderNotes(d);};
 }
-renderNotes(NOTES_FALLBACK);
+function applyLang(){
+  document.documentElement.lang=LANG;document.documentElement.dir=LANG==='ar'?'rtl':'ltr';
+  document.querySelectorAll('[data-i]').forEach(e=>{e.innerHTML=t(e.dataset.i);});
+  document.title=t('title');
+  const m=document.querySelector('meta[name=description]');if(m)m.content=t('desc');
+  const og=document.querySelector('meta[property="og:description"]');if(og)og.content=t('desc');
+  const sel=document.getElementById('langSel');sel.value=LANG;
+  render(DATA);renderNotes(NDATA);eraTick(true);
+}
+const ERAK=['e1','e2','e3','e4','e5','e6'];let lastEra=-1;
+function eraTick(force){const v=document.getElementById('heroVid'),c=document.getElementById('eraChip');if(!v||!c)return;
+  const i=Math.min(5,Math.floor((v.currentTime||0)/10));if(i!==lastEra||force){lastEra=i;c.textContent=t(ERAK[i]);}}
+(function(){const sel=document.getElementById('langSel');
+  sel.innerHTML=I.L.map(l=>'<option value="'+l+'">'+NAMES[l]+'</option>').join('');
+  sel.onchange=()=>{LANG=sel.value;try{localStorage.setItem('ce_lang',LANG);}catch(e){}applyLang();};
+  const v=document.getElementById('heroVid');if(v){v.addEventListener('timeupdate',()=>eraTick());const p=v.play&&v.play();if(p&&p.catch)p.catch(()=>{});}})();
+applyLang();
 fetch('patchnotes.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(renderNotes).catch(()=>{});
 fetch('versions.json',{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(render).catch(()=>{});
-(function(){const s=[...document.querySelectorAll('.hero .slide')];let i=0;if(s.length<2)return;setInterval(()=>{s[i].classList.remove('on');i=(i+1)%s.length;s[i].classList.add('on');},5000);})();
 </script>
 </body>
 </html>

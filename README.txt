@@ -7,7 +7,8 @@ Crown Envoy 사이트 (정적 사이트: 서버 프로그램이 필요 없어요
   versions.json              버전 목록 (새 버전을 낼 때 여기에 한 줄 추가)
   patchnotes.json            패치노트 (새 패치마다 맨 위에 항목 추가)
   CrownEnvoy-v0.1.html       v0.1 게임 파일
-  CrownEnvoy-latest.html     최신 버전의 복사본 ("바로 플레이"가 이 파일을 열어요)
+  i18n.js                    7개 언어 번역(ko·en·es·fr·de·ja·ar). 접속자 브라우저 언어를 자동 감지
+  hero.mp4                   첫 화면 전투 영상(시대가 계속 바뀜)
   map.jpg, battle-*.jpg      사이트 배경·소개 이미지
 
 [ 올리는 방법: GitHub Pages ]
@@ -19,9 +20,9 @@ Crown Envoy 사이트 (정적 사이트: 서버 프로그램이 필요 없어요
 
 [ 새 버전을 낼 때 ]
   1. 새 게임 파일을 CrownEnvoy-v0.2.html 처럼 올리기
-  2. 같은 내용을 CrownEnvoy-latest.html 로도 덮어쓰기
-  3. versions.json 맨 위에 새 항목을 추가하고, 이전 최신 항목의 "latest"를 false로, latest 값과 latestFile 을 바꾸기
-  4. patchnotes.json 맨 위에 패치노트 추가
+  2. versions.json 맨 위에 새 항목을 추가하고, 이전 최신 항목의 "latest"를 false로, latest 값과 latestFile(새 파일 이름)을 바꾸기
+  3. patchnotes.json 맨 위에 패치노트 추가
+  4. 새 버전의 제목·요약·패치노트 번역은 i18n.js 의 V, N 항목에 버전 번호로 추가 (없으면 한국어 원문이 표시돼요)
   (index.html 안의 FALLBACK 복사본은 파일로 직접 열 때만 쓰이니, 서버에 올릴 땐 json만 고치면 돼요)
 
 [ 알아 둘 점 ]
