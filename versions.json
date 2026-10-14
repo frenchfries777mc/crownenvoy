@@ -1,16 +1,26 @@
 {
  "name": "Crown Envoy",
- "latest": "0.1",
- "latestFile": "CrownEnvoy-v0.1.html",
- "updated": "2026-10-14",
+ "latest": "0.2",
+ "latestFile": "CrownEnvoy-v0.2.html",
+ "updated": "2026-10-15",
  "versions": [
+  {
+   "version": "0.2",
+   "date": "2026-10-15",
+   "file": "CrownEnvoy-v0.2.html",
+   "title": "상황별 튜토리얼과 로그인",
+   "summary": "상황에 맞춰 안내하는 튜토리얼, Frenchfries777 계정 로그인·프로필 카드, 로비 배경의 랜덤 시대 전투, 병사로 바뀐 신문 사진",
+   "latest": true,
+   "size": 7388154,
+   "sha256": "941d02049f15"
+  },
   {
    "version": "0.1",
    "date": "2026-10-14",
    "file": "CrownEnvoy-v0.1.html",
    "title": "첫 버전",
    "summary": "유럽 전장 위에서 펼치는 외교·전쟁 전략. 역사 템플릿 16개, 온라인·비공개·AI 대전, 동맹·속국·연합 외교, 토큰 평화 협상, 시나리오 편집기",
-   "latest": true,
+   "latest": false,
    "size": 7341885,
    "sha256": "bdbe6bab7b56"
   }

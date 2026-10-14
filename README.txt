@@ -7,6 +7,7 @@ Crown Envoy 사이트 (정적 사이트: 서버 프로그램이 필요 없어요
   versions.json              버전 목록 (새 버전을 낼 때 여기에 한 줄 추가)
   patchnotes.json            패치노트 (새 패치마다 맨 위에 항목 추가)
   CrownEnvoy-v0.1.html       v0.1 게임 파일
+  CrownEnvoy-v0.2.html       v0.2 게임 파일(최신)
   i18n.js                    7개 언어 번역(ko·en·es·fr·de·ja·ar). 접속자 브라우저 언어를 자동 감지
   hero.mp4                   첫 화면 전투 영상(시대가 계속 바뀜)
   map.jpg, battle-*.jpg      사이트 배경·소개 이미지
