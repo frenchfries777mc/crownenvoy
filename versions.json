@@ -1,0 +1,18 @@
+{
+ "name": "Crown Envoy",
+ "latest": "0.1",
+ "latestFile": "CrownEnvoy-latest.html",
+ "updated": "2026-10-14",
+ "versions": [
+  {
+   "version": "0.1",
+   "date": "2026-10-14",
+   "file": "CrownEnvoy-v0.1.html",
+   "title": "첫 버전",
+   "summary": "유럽 전장 위에서 펼치는 외교·전쟁 전략. 역사 템플릿 16개, 온라인·비공개·AI 대전, 동맹·속국·연합 외교, 토큰 평화 협상, 시나리오 편집기",
+   "latest": true,
+   "size": 7341885,
+   "sha256": "bdbe6bab7b56"
+  }
+ ]
+}
