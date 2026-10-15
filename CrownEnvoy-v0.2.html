@@ -4906,8 +4906,10 @@ const ACH=[
  ['win','🏆','천하의 주인','한 판에서 승리해요',S=>S.win],
 ];
 window.Ach={
- S:sv('ce_ach',{u:{},st:{w:0,c:0,d:0,u:0,cv:0,cap:0,win:0}}),
- save(){st('ce_ach',this.S);},
+ S:(()=>{const d={u:{},st:{w:0,c:0,d:0,u:0,cv:0,cap:0,win:0}};let o=sv('ce_meta_ach',null);
+   if(!o){const old=sv('ce_ach',null);o=d;if(old&&old.st){o.st=Object.assign(d.st,old.st);ACH.forEach(a=>{if(old.u&&old.u[a[0]])o.u[a[0]]=old.u[a[0]];});}try{st('ce_meta_ach',o);}catch(e){}}
+   return o;})(),
+ save(){st('ce_meta_ach',this.S);},
  unlock(id){if(this.S.u[id])return;const a=ACH.find(x=>x[0]===id);if(!a)return;this.S.u[id]=Date.now();this.save();try{UI.toast('🏆 업적 달성: '+a[2],'ok');}catch(e){}},
  eval(extra){const v=C.view;if(!v||v.draft||v.spec||v.me==null)return;const me=v.players[v.me];if(!me)return;const t=this.S.st;
   const S={w:t.w,c:t.c,d:t.d,u:t.u,cv:t.cv,cap:t.cap,win:t.win||(extra&&extra.win)?1:0,mg:me.ut&&me.ut[0]>=3,tech:me.ut&&me.ut.every(x=>x>=2),ally:v.players.filter(p=>p.ally).length,marry:(v.marr||[]).some(x=>x.a===v.me||x.b===v.me),medal:v.gens.some(g=>g.owner===v.me&&/🎖/.test(g.grade||'')),land:v.terr.filter(x=>x.owner===v.me).length};
@@ -5350,7 +5352,8 @@ const ACH=[
  {id:'all',n:'Crown Envoy 정복자',d:'다른 도전과제를 모두 달성하기'}
 ];
 let D={u:{},s:{},seen:[]};
-try{const j=JSON.parse(localStorage.getItem(KEY)||'null');if(j&&j.u)D=Object.assign({u:{},s:{},seen:[]},j);}catch(e){}
+const own=o=>{const r={u:{},s:Object.assign({},o.s||{}),seen:(o.seen||[]).filter(k=>ACH.some(a=>a.id===k))};ACH.forEach(a=>{if(o.u&&o.u[a.id])r.u[a.id]=o.u[a.id];});return r;};
+try{const j=JSON.parse(localStorage.getItem(KEY)||'null');if(j&&j.u)D=own(j);}catch(e){}
 const saveLocal=()=>{try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){}};
 /* 계정과 합치기: 달성은 합집합, 누적 수치는 큰 쪽 */
 function merge(a,b){const o={u:Object.assign({},a.u||{}),s:Object.assign({},a.s||{}),seen:(a.seen||[]).slice()};
@@ -5361,10 +5364,10 @@ let syncUid=null,pushT=null;
 function remoteSave(){clearTimeout(pushT);pushT=setTimeout(async()=>{try{if(!syncUid||!window.CEAuth)return;const sb=await CEAuth.sb();await sb.auth.updateUser({data:{ce_ach:D}});}catch(e){}},2500);}
 async function syncLogin(){let u=null;try{u=window.CEAuth&&CEAuth.user();}catch(e){}const id=u&&u.id||null;if(id===syncUid)return;syncUid=id;if(!id)return;
   try{const sb=await CEAuth.sb();const r=await sb.auth.getUser();const md=r&&r.data&&r.data.user&&r.data.user.user_metadata;const rem=md&&md.ce_ach;
-    const before=JSON.stringify(D);if(rem&&rem.u)D=merge(D,rem);saveLocal();paintBtn();draw();
+    const before=JSON.stringify(D);if(rem&&rem.u)D=own(merge(D,rem));saveLocal();paintBtn();draw();
     if(!rem||JSON.stringify(rem)!==JSON.stringify(D)||before!==JSON.stringify(D))remoteSave();}catch(e){}cardSync();}
 /* 공용 프로필 카드에 '달성/전체' 알리기 (허브의 ff-profile.js가 있을 때만) */
-let cardT=null;function cardSync(n){n=n||0;clearTimeout(cardT);cardT=setTimeout(async()=>{try{if(!syncUid)return;if(!window.FFProfile||!FFProfile.setAchievements){if(n<20)cardSync(n+1);return;}const sb=await CEAuth.sb();await FFProfile.setAchievements(sb,'crownenvoy',ACH.filter(a=>D.u[a.id]).length,ACH.length);}catch(e){}},1500);}
+let cardT=null;function cardSync(n){n=n||0;clearTimeout(cardT);cardT=setTimeout(async()=>{try{if(!syncUid)return;if(!window.FFProfile||!FFProfile.setAchievements){if(n<20)cardSync(n+1);return;}const sb=await CEAuth.sb();await FFProfile.setAchievements(sb,'crownenvoy',ACH.filter(a=>D.u[a.id]).length,ACH.length,ACH.filter(a=>D.u[a.id]).map(a=>a.id));}catch(e){}},1500);}
 function unlock(id){if(D.u[id])return;D.u[id]=Date.now();show(id);cardSync();
   const rest=ACH.filter(a=>a.id!=='all');if(id!=='all'&&rest.every(a=>D.u[a.id]))unlock('all');}
 function bump(k,n){D.s[k]=(D.s[k]||0)+n;touch();ACH.forEach(a=>{if(a.s===k&&D.s[k]>=a.need)unlock(a.id);});}
