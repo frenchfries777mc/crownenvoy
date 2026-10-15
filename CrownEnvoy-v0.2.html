@@ -2286,9 +2286,9 @@ const GOV={
   mon:{n:'왕정',r:'왕',sfx:'왕국',fx:{cons:-0.08},d:'군사 징집 비용 8% 감소'},
   emp:{n:'제정',r:'황제',sfx:'제국',fx:{cons:-0.16,mor:0.05},d:'군사 징집 비용 16% 감소, 사기 5% 증가'},
   rep:{n:'공화정',r:'대통령',sfx:'공화국',fx:{reb:-0.05,mor:0.05},d:'반란 확률 5% 감소, 사기 5% 증가'},
-  tot:{n:'전체주의',r:'총통',sfx:'총통국',fx:{mor:0.10},d:'사기 10% 증가'},
+  tot:{n:'전체주의',r:'총통',sfx:'',fx:{mor:0.10},d:'사기 10% 증가'},
   com:{n:'공산주의',r:'제1 서기장',sfx:'인민공화국',fx:{tax:0.03,upk:-0.07},d:'세금 3% 증가, 병사 유지 비용 7% 감소'},
-  par:{n:'의원내각제',r:'총리',sfx:'연방',fx:{reb:-0.10,gxp:0.03},d:'반란 확률 10% 감소, 장군 경험치 3% 증가'}};
+  par:{n:'의원내각제',r:'총리',sfx:'',fx:{reb:-0.10,gxp:0.03},d:'반란 확률 10% 감소, 장군 경험치 3% 증가'}};
 const FAITH={
   chr:{n:'크리스트교',ic:'✝️',fx:{atk:0.05,mor:0.10},d:'병사 공격력 5% 증가, 사기 10% 증가'},
   pro:{n:'개신교',ic:'📖',fx:{tech:0.05,reb:-0.05,dip:0.05},d:'기술력 5% 증가, 반란 확률 5% 감소, 조약 체결 확률 5% 증가'},
@@ -2342,7 +2342,7 @@ function empBlock(pid){const nd=empNeed(),n=owned(pid).length;const alive=G.play
 const polCd=(p,k)=>{const at=k==='gov'?p.govAt:p.faiAt;return at==null?0:Math.max(0,at+(k==='gov'?GOV_CD:FAI_CD)-G.round);};
 const propCost=p=>Math.max(60,Math.round(income(p.id)*0.35/10)*10);
 const festCost=p=>Math.max(120,Math.round(income(p.id)*0.8/10)*10);
-function setGov(p,g,quiet){const G0=GOV[p.gov];p.gov=g;p.govAt=G.round;p.govUntil=G.round+GOV_T;const old=p.kingdom;p.kingdom=govBase(p.kingdom)+' '+GOV[g].sfx;
+function setGov(p,g,quiet){const G0=GOV[p.gov];p.gov=g;p.govAt=G.round;p.govUntil=G.round+GOV_T;const old=p.kingdom;p.kingdom=govBase(p.kingdom)+(GOV[g].sfx?' '+GOV[g].sfx:'');
   log(`${old}이(가) ${GOV[g].n}(으)로 바뀌어 ${p.kingdom}이(가) 되었다.`,'event');
   (G.pendNews=G.pendNews||[]).push({head:`${govBase(old)}, ${G0?G0.n+'에서 ':''}${GOV[g].n}(으)로`,body:`${p.kingdom}이(가) 새 ${GOV[g].r}을(를) 세웠다. 나라가 어수선하지만 국고는 넘쳐난다.`,scene:'revolution',ca:p.color,cb:p.color,pids:[p.id]});}
 function polAct(pid,m){const p=G.players[pid];if(!p||!p.alive)return fail('대상 오류');polEnsure(p);if(!['plan','report'].includes(G.phase))return fail('지금은 불가능합니다.');
@@ -4797,7 +4797,7 @@ Object.assign(UI,{
     const trans=(t,txt)=>t?`<div class="sm" style="color:var(--gold2);margin-top:4px">${txt} (남은 ${t}턴)</div>`:'';
     h+=`<h3>정치체제</h3><div class="card" style="border-left-color:var(--gold)"><div class="row"><div><b style="font-size:16px">${g.n}</b> <span class="tag">${g.r}</span><div class="sm muted">${esc(me.kingdom)}</div></div></div><div class="sm" style="margin-top:4px">${g.d}</div>${trans(P.govT,'체제 전환 중: 사기 −50%, 반란 확률 2배, 수입 2배')}</div>`;
     h+=`<div class="sm muted" style="margin:2px 2px 6px">체제를 바꾸면 나라 이름 끝이 바뀌고, ${GOV_T}턴 동안 사기 −50%·반란 확률 2배·수입 2배가 돼요. 한 번 바꾸면 ${GOV_CD}턴 동안 다시 못 바꿔요.${P.govCd?` <b style="color:var(--gold2)">${P.govCd}턴 뒤 가능</b>`:''}</div>`;
-    h+=Object.keys(GOV).filter(k=>k!==P.gov).map(k=>{const x=GOV[k];const blk=k==='emp'?P.emp:null;return `<div class="card"><div class="row"><div><b>${x.n}</b> <span class="tag">${x.r}</span> <span class="sm muted">→ ${esc(P.base)} ${x.sfx}</span><div class="sm">${x.d}</div>${blk?`<div class="sm" style="color:var(--bad)">${esc(blk)}</div>`:k==='emp'?`<div class="sm muted">영토 ${P.empNeed}곳 이상 · 병력이 평균의 1.5배 이상</div>`:''}</div><button class="btn sm" style="flex:none" data-act="pol" data-op="gov" data-v="${k}" ${P.govCd||blk?'disabled':''}>바꾸기</button></div></div>`;}).join('');
+    h+=Object.keys(GOV).filter(k=>k!==P.gov).map(k=>{const x=GOV[k];const blk=k==='emp'?P.emp:null;return `<div class="card"><div class="row"><div><b>${x.n}</b> <span class="tag">${x.r}</span> <span class="sm muted">→ ${esc(P.base)}${x.sfx?' '+x.sfx:''}</span><div class="sm">${x.d}</div>${blk?`<div class="sm" style="color:var(--bad)">${esc(blk)}</div>`:k==='emp'?`<div class="sm muted">영토 ${P.empNeed}곳 이상 · 병력이 평균의 1.5배 이상</div>`:''}</div><button class="btn sm" style="flex:none" data-act="pol" data-op="gov" data-v="${k}" ${P.govCd||blk?'disabled':''}>바꾸기</button></div></div>`;}).join('');
     h+=`<h3>종교</h3><div class="card" style="border-left-color:var(--gold)"><div><b style="font-size:16px">${f.ic} ${f.n}</b></div><div class="sm" style="margin-top:4px">${f.d}</div>${trans(P.faiT,'개종 직후: 반란 확률 +70%, 사기 +50%, 수입 +20%')}</div>`;
     h+=`<div class="sm muted" style="margin:2px 2px 6px">종교를 바꾸면 ${FAI_T}턴 동안 반란 확률 +70%·사기 +50%·수입 +20%가 돼요. 한 번 바꾸면 ${FAI_CD}턴 동안 다시 못 바꿔요.${P.faiCd?` <b style="color:var(--gold2)">${P.faiCd}턴 뒤 가능</b>`:''}</div>`;
     h+=Object.keys(FAITH).filter(k=>k!==P.fai).map(k=>{const x=FAITH[k];return `<div class="card"><div class="row"><div><b>${x.ic} ${x.n}</b><div class="sm">${x.d}</div></div><button class="btn sm" style="flex:none" data-act="pol" data-op="fai" data-v="${k}" ${P.faiCd?'disabled':''}>개종</button></div></div>`;}).join('');
