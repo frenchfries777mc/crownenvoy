@@ -5081,18 +5081,22 @@ run();
 })();
 
 ;(function(){
-const SB='https://kebsbuvuutilitwlvxzv.supabase.co',KEY='sb_publishable_4Egu0zm3p6cxWGvP_-GlIw_mlCpO1Nf',SK='ce_sb';
+const SB='https://kebsbuvuutilitwlvxzv.supabase.co',KEY='sb_publishable_4Egu0zm3p6cxWGvP_-GlIw_mlCpO1Nf',LEGACY='ce_sb',STORE='sb-kebsbuvuutilitwlvxzv-auth-token';
 const $=s=>document.querySelector(s);
-let S=null,mode='in',busy=false,msg='',ok=false;
-try{S=JSON.parse(localStorage.getItem(SK)||'null');}catch(e){}
-const save=()=>{try{if(S)localStorage.setItem(SK,JSON.stringify(S));else localStorage.removeItem(SK);}catch(e){}};
+let S=null,TOK=null,mode='in',busy=false,msg='',ok=false;
+/* 로그인 정보는 허브·다른 게임과 같은 supabase-js 기본 칸(STORE)에 있다. 라이브러리가 뜨기 전에도 이름이 보이도록 먼저 살짝 읽어 둔다 */
+try{const j=JSON.parse(localStorage.getItem(STORE)||'null');const u=j&&(j.user||(j.currentSession&&j.currentSession.user));if(u&&u.id)S={user:u,prof:null};}catch(e){}
+
 const emailFor=u=>String(u).toLowerCase().replace(/[^a-z0-9_]/g,'')+'@arenaclash.local';
 const ID_RE=/^[a-zA-Z0-9_]{3,16}$/;
 const dname=u=>{if(!u)return '';const pf=(S&&S.prof)||{};return pf.display_name||pf.username||(u.email||'').split('@')[0]||'';};
-async function api(path,body,tok,method,extra){const r=await fetch(SB+path,{method:method||'POST',headers:Object.assign({'apikey':KEY,'Content-Type':'application/json','Authorization':'Bearer '+(tok||KEY)},extra||{}),body:body===undefined?undefined:JSON.stringify(body)});let j={};try{const tx=await r.text();j=tx?JSON.parse(tx):{};}catch(e){}if(!r.ok)throw Object.assign(new Error(j.msg||j.error_description||j.message||j.error||('HTTP '+r.status)),{code:j.error_code||j.code||r.status});return j;}
-function setSession(j){if(!j||!j.access_token)return;S={access_token:j.access_token,refresh_token:j.refresh_token,expires_at:j.expires_at||Math.floor(Date.now()/1000)+(j.expires_in||3600),user:j.user||(S&&S.user),prof:S&&S.prof};save();try{const n=dname(S.user);if(n)localStorage.setItem('ce_name',n.slice(0,16));}catch(e){}}
-async function loadProf(){if(!S||!S.user)return;try{const r=await api('/rest/v1/profiles?id=eq.'+S.user.id+'&select=username,display_name',undefined,S.access_token,'GET');const row=Array.isArray(r)?r[0]:null;if(row){S.prof=row;save();const n=dname(S.user);if(n)localStorage.setItem('ce_name',n.slice(0,16));}}catch(e){}paint();}
-async function refresh(){if(!S||!S.refresh_token)return;if(S.expires_at-60>Date.now()/1000)return;try{setSession(await api('/auth/v1/token?grant_type=refresh_token',{refresh_token:S.refresh_token}));if(SBC)SBC.auth.setSession({access_token:S.access_token,refresh_token:S.refresh_token}).catch(()=>{});}catch(e){if(e.code===400||e.code===401||e.code===403||/refresh|invalid/i.test(e.message)){S=null;save();}}paint();}
+
+function onSession(ses){const u=ses&&ses.user||null;TOK=ses&&ses.access_token||null;
+  if(!u){if(S){S=null;marked=false;}paint();return;}
+  const same=S&&S.user&&S.user.id===u.id&&S.prof;if(same){S.user=u;paint();return;}
+  S={user:u,prof:S&&S.user&&S.user.id===u.id?S.prof:null};paint();loadProf();mark();}
+async function loadProf(){if(!S||!S.user||!SBC)return;const id=S.user.id;try{const r=await SBC.from('profiles').select('username,display_name').eq('id',id).maybeSingle();if(r.data&&S&&S.user&&S.user.id===id){S.prof=r.data;const n=dname(S.user);if(n)localStorage.setItem('ce_name',n.slice(0,16));}}catch(e){}paint();}
+
 function errKo(e){const m=String(e&&e.message||'');
   if(/invalid login|invalid credentials/i.test(m))return '아이디 또는 비밀번호가 맞지 않아요.';
   if(/already registered|already been registered|user_already_exists/i.test(m)||(e&&e.code==='user_already_exists'))return '이미 사용 중인 아이디예요.';
@@ -5108,21 +5112,29 @@ const pbtn=document.createElement('button');pbtn.id='ffProfBtn';pbtn.className='
 bar.appendChild(pbtn);bar.appendChild(btn);
 function paint(){btn.textContent=S&&S.user?'👤 '+(dname(S.user)||'계정'):'로그인';pbtn.style.display=(S&&S.user&&window.FFProfile)?'':'none';}
 /* ----- Frenchfries777 공용 프로필 카드 (허브 스크립트가 없으면 조용히 무시) ----- */
-let SBC=null,marked=false;
+let SBC=null,sbP=null,marked=false;
 function loadSb(){if(window.supabase&&window.supabase.createClient)return Promise.resolve(window.supabase);return new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';sc.onload=()=>window.supabase?res(window.supabase):rej(new Error('x'));sc.onerror=()=>rej(new Error('x'));document.head.appendChild(sc);});}
-async function ensureSb(){if(SBC)return SBC;const lib=await loadSb();const c=lib.createClient(SB,KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});if(S)await c.auth.setSession({access_token:S.access_token,refresh_token:S.refresh_token});SBC=c;return c;}
+/* supabase-js 기본 클라이언트: 허브에서 로그인했으면 그대로 이어지고, 토큰 갱신도 라이브러리가 맡는다. 예전 'ce_sb' 세션이 있으면 한 번 옮기고 지운다 */
+function ensureSb(){if(SBC)return Promise.resolve(SBC);if(sbP)return sbP;
+  sbP=loadSb().then(async lib=>{const c=lib.createClient(SB,KEY);SBC=c;
+    try{const old=JSON.parse(localStorage.getItem(LEGACY)||'null');if(old&&old.refresh_token){const cur=await c.auth.getSession();if(!(cur.data&&cur.data.session))await c.auth.setSession({access_token:old.access_token,refresh_token:old.refresh_token});}}catch(e){}
+    try{localStorage.removeItem(LEGACY);}catch(e){}
+    c.auth.onAuthStateChange((ev,ses)=>{setTimeout(()=>onSession(ses),0);});
+    try{const r=await c.auth.getSession();onSession(r.data&&r.data.session);}catch(e){}
+    return c;}).catch(e=>{sbP=null;SBC=null;throw e;});
+  return sbP;}
 function whenFF(cb){if(window.FFProfile){cb();return;}let n=0;const t=setInterval(()=>{if(window.FFProfile){clearInterval(t);cb();}else if(++n>40)clearInterval(t);},500);}
 async function mark(){if(marked||!S||!S.user)return;marked=true;whenFF(async()=>{paint();try{const sb=await ensureSb();await window.FFProfile.markPlayed(sb,'crownenvoy');}catch(e){}});}
 pbtn.onclick=async()=>{if(!window.FFProfile||!S||!S.user)return;try{const sb=await ensureSb();window.FFProfile.open(sb,S.user.id);}catch(e){}};
 function close(){const o=$('#authOv');if(o)o.remove();}
 function open(){close();const o=document.createElement('div');o.id='authOv';document.body.appendChild(o);
   o.onclick=e=>{if(e.target===o)close();};draw();}
-function draw(){const o=$('#authOv');if(!o)return;
+function draw(){const o=$('#authOv');if(!o)return;const keepId=(($('#aEm')||{}).value)||'';
   if(S&&S.user){o.innerHTML='<div class="ab"><h2>Frenchfries777 계정</h2><div class="as"></div><div style="font-size:16px;font-weight:800" class="un"></div><div class="as" style="margin-top:2px"></div><div class="ar"><button class="btn" data-a="close">닫기</button><button class="btn danger" data-a="out">로그아웃</button></div></div>';
     o.querySelector('.un').textContent='👤 '+dname(S.user);o.querySelectorAll('.as')[1].textContent=(S.prof&&S.prof.username)||'';}
   else{o.innerHTML='<div class="ab"><h2>Frenchfries777 계정</h2><div class="as">계정으로 로그인하면 닉네임이 게임에 그대로 쓰여요.</div><div class="tg"><button class="btn sm '+(mode==='in'?'on':'')+'" data-a="m-in">로그인</button><button class="btn sm '+(mode==='up'?'on':'')+'" data-a="m-up">회원가입</button></div>'
     +'<input id="aEm" type="text" maxlength="16" placeholder="아이디" autocomplete="username" autocapitalize="off" spellcheck="false">'+'<input id="aPw" type="password" placeholder="비밀번호" autocomplete="'+(mode==='up'?'new-password':'current-password')+'"><div class="am'+(ok?' ok':'')+'"></div><div class="ar"><button class="btn" data-a="close">닫기</button><button class="btn primary" data-a="go">'+(mode==='up'?'가입하기':'로그인')+'</button></div></div>';
-    o.querySelector('.am').textContent=msg;}
+    o.querySelector('.am').textContent=msg;if(keepId)$('#aEm').value=keepId;}
   o.querySelectorAll('input').forEach(i=>i.addEventListener('keydown',e=>{if(e.key==='Enter')go();}));
   o.onclick=e=>{if(e.target===o){close();return;}const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
     if(a==='close')close();else if(a==='m-in'||a==='m-up'){mode=a==='m-up'?'up':'in';msg='';draw();}else if(a==='go')go();else if(a==='out')out();};}
@@ -5130,22 +5142,21 @@ async function go(){if(busy)return;const id=(($('#aEm')||{}).value||'').trim(),p
   if(!id||!pw){msg='아이디와 비밀번호를 입력해 주세요.';ok=false;draw();return;}
   if(!ID_RE.test(id)){msg='아이디는 영문·숫자·밑줄 3~16자로 입력해 주세요.';ok=false;draw();return;}
   busy=true;msg='';ok=false;
-  try{const em=emailFor(id);
-    if(mode==='up'){const j=await api('/auth/v1/signup',{email:em,password:pw});
-      if(!j.access_token)throw new Error('signup failed');
-      S=null;setSession(j);
-      try{await api('/rest/v1/profiles',{id:j.user.id,username:id},j.access_token,'POST',{'Prefer':'return=minimal'});}catch(e){}
-      await loadProf();}
-    else{setSession(await api('/auth/v1/token?grant_type=password',{email:em,password:pw}));await loadProf();}
+  try{const c=await ensureSb(),em=emailFor(id);
+    if(mode==='up'){const r=await c.auth.signUp({email:em,password:pw});if(r.error)throw r.error;
+      if(!r.data||!r.data.session)throw new Error('signup failed');
+      try{await c.from('profiles').insert({id:r.data.user.id,username:id});}catch(e){}
+      onSession(r.data.session);await loadProf();}
+    else{const r=await c.auth.signInWithPassword({email:em,password:pw});if(r.error)throw r.error;onSession(r.data.session);await loadProf();}
     paint();close();mark();
   }catch(e){msg=errKo(e);ok=false;draw();}
   busy=false;}
-async function out(){const t=S&&S.access_token;S=null;SBC=null;marked=false;save();paint();close();try{if(t)await api('/auth/v1/logout',{},t);}catch(e){}}
+async function out(){S=null;TOK=null;marked=false;paint();close();try{const c=await ensureSb();await c.auth.signOut({scope:'local'});}catch(e){}}
 btn.onclick=open;paint();
 function mount(){const l=$('#lobby');if(l&&!bar.parentNode)l.appendChild(bar);}
 mount();setTimeout(mount,500);
-window.CEAuth={user:()=>S&&S.user||null,token:()=>S&&S.access_token||null,open,sb:ensureSb,name:()=>dname(S&&S.user)};
-refresh();loadProf();if(S&&S.user)mark();setInterval(refresh,300000);
+window.CEAuth={user:()=>S&&S.user||null,token:()=>TOK,open,sb:ensureSb,name:()=>dname(S&&S.user)};
+paint();ensureSb().catch(()=>{});
 })();
 ;(function(){
 /* ----- 친구: Frenchfries777 계정의 친구 목록(Stickseum과 같은 friendships 표)으로, 친구가 연 비공개 방에 코드 없이 바로 들어가거나 친구를 초대한다 -----
