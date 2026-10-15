@@ -9,7 +9,7 @@ Crown Envoy 사이트 (정적 사이트: 서버 프로그램이 필요 없어요
   CrownEnvoy-v0.1.html       v0.1 게임 파일
   CrownEnvoy-v0.2.html       v0.2 게임 파일(최신)
   i18n.js                    7개 언어 번역(ko·en·es·fr·de·ja·ar). 접속자 브라우저 언어를 자동 감지
-  hero.mp4                   첫 화면 전투 영상(시대가 계속 바뀜)
+  hero.js, hero-map.js       첫 화면 배경(유럽 지도에서 두 나라가 영토를 뺏고 뺏기는 장면)
   map.jpg, battle-*.jpg      사이트 배경·소개 이미지
 
 [ 올리는 방법: GitHub Pages ]
