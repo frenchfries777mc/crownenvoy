@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<script src="https://frenchfries777mc.github.io/games/ff-lang.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Crown Envoy</title>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -575,7 +576,7 @@ function apply(){
 }
 window.setLang=function(l){
   if(!LANGS.some(x=>x[0]===l))return;
-  lang=l;try{localStorage.setItem('cq_lang',l);}catch(e){}
+  lang=l;try{localStorage.setItem('cq_lang',l);}catch(e){}try{window.FFLang&&FFLang.set(l);}catch(e){}
   apply();
 };
 function init(){
@@ -5356,8 +5357,10 @@ function remoteSave(){clearTimeout(pushT);pushT=setTimeout(async()=>{try{if(!syn
 async function syncLogin(){let u=null;try{u=window.CEAuth&&CEAuth.user();}catch(e){}const id=u&&u.id||null;if(id===syncUid)return;syncUid=id;if(!id)return;
   try{const sb=await CEAuth.sb();const r=await sb.auth.getUser();const md=r&&r.data&&r.data.user&&r.data.user.user_metadata;const rem=md&&md.ce_ach;
     const before=JSON.stringify(D);if(rem&&rem.u)D=merge(D,rem);saveLocal();paintBtn();draw();
-    if(!rem||JSON.stringify(rem)!==JSON.stringify(D)||before!==JSON.stringify(D))remoteSave();}catch(e){}}
-function unlock(id){if(D.u[id])return;D.u[id]=Date.now();show(id);
+    if(!rem||JSON.stringify(rem)!==JSON.stringify(D)||before!==JSON.stringify(D))remoteSave();}catch(e){}cardSync();}
+/* 공용 프로필 카드에 '달성/전체' 알리기 (허브의 ff-profile.js가 있을 때만) */
+let cardT=null;function cardSync(n){n=n||0;clearTimeout(cardT);cardT=setTimeout(async()=>{try{if(!syncUid)return;if(!window.FFProfile||!FFProfile.setAchievements){if(n<20)cardSync(n+1);return;}const sb=await CEAuth.sb();await FFProfile.setAchievements(sb,'crownenvoy',ACH.filter(a=>D.u[a.id]).length,ACH.length);}catch(e){}},1500);}
+function unlock(id){if(D.u[id])return;D.u[id]=Date.now();show(id);cardSync();
   const rest=ACH.filter(a=>a.id!=='all');if(id!=='all'&&rest.every(a=>D.u[a.id]))unlock('all');}
 function bump(k,n){D.s[k]=(D.s[k]||0)+n;touch();ACH.forEach(a=>{if(a.s===k&&D.s[k]>=a.need)unlock(a.id);});}
 let dirty=false;const touch=()=>{dirty=true;};
