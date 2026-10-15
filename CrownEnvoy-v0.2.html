@@ -2831,7 +2831,7 @@ const Host={seats:[],started:false,timer:null,mapId:0,snaps:[],
     clearInterval(this.timer);this.timer=setInterval(()=>this.tick(),400);},
   tplObj(){return this.D&&this.D.tpl?TEMPLATES.find(t=>t.id===this.D.tpl):null;},
   draftPush(){const D=this.D;if(!D)return;const msg={t:'draft',d:{tpl:D.tpl||null,order:D.order,idx:D.idx,owner:D.owner||null,picks:D.picks,remain:Math.max(0,D.deadline-Date.now()),names:this.seats.map(x=>x.name||''),total:DRAFT_N}};this.seats.forEach((s,i)=>this.sendTo(i,msg));(this.specs||[]).forEach(sp=>this.sendSpec(sp,msg));},
-  draftStep(){const D=this.D;if(D.idx>=D.order.length){this.finishDraft();return;}const s=this.seats[D.order[D.idx]];const bot=s.kind==='bot';D.deadline=Date.now()+(bot?1200:(D.tpl?90000:35000));D.botAt=bot?Date.now()+600+Math.random()*500:0;this.draftPush();},
+  draftStep(){const D=this.D;if(D.idx>=D.order.length){this.finishDraft();return;}const s=this.seats[D.order[D.idx]];const bot=s.kind==='bot';D.deadline=Date.now()+(bot?1200:(D.tpl?90000:(D.picks[D.order[D.idx]].length?10000:30000)));D.botAt=bot?Date.now()+600+Math.random()*500:0;this.draftPush();},
   claim(pid,tid){const D=this.D;if(!D||D.tpl||D.order[D.idx]!==pid)return;if(!claimOptions(D.owner,pid).includes(tid)){this.sendTo(pid,{t:'res',ok:false,msg:'지금은 고를 수 없는 지역입니다.'});return;}
     D.owner[tid]=pid;D.picks[pid].push(tid);D.idx++;this.draftStep();},
   pickNation(pid,k){const D=this.D,tpl=this.tplObj();if(!D||!tpl||D.order[D.idx]!==pid)return;if(!(k>=0&&k<tpl.nations.length)||D.picks.includes(k)){this.sendTo(pid,{t:'res',ok:false,msg:'이미 다른 지휘관이 고른 나라입니다.'});return;}
