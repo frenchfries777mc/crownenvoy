@@ -2,17 +2,17 @@
  "name": "Crown Envoy",
  "latest": "0.2",
  "latestFile": "CrownEnvoy-v0.2.html",
- "updated": "2026-10-15",
+ "updated": "2026-10-16",
  "versions": [
   {
    "version": "0.2",
-   "date": "2026-10-15",
+   "date": "2026-10-16",
    "file": "CrownEnvoy-v0.2.html",
    "title": "상황별 튜토리얼과 로그인",
-   "summary": "상황에 맞춰 안내하는 튜토리얼, Frenchfries777 계정 로그인·프로필 카드, 로비 배경의 랜덤 시대 전투, 병사로 바뀐 신문 사진",
+   "summary": "상황별 튜토리얼, Frenchfries777 계정 로그인·친구·도전과제·랭킹, 정치체제·종교·여론, 자원 4종(목재·고기·밀가루·향신료)과 생산 건물, 1턴 뒤 합류하는 징집, 사기 내역, 턴 보고서, 왕위 계승·공동 전쟁, 시나리오 편집기 이벤트와 공유, 구불구불한 지역 경계",
    "latest": true,
-   "size": 3921812,
-   "sha256": "e4bd2692774d"
+   "size": 4078335,
+   "sha256": "987e8bac9ed8"
   },
   {
    "version": "0.1",
