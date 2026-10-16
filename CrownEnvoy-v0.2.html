@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b16</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -1091,7 +1091,7 @@ function requestJoin(a,b){if(G.tplId==='age'&&(G.players[a].neu||G.players[b].ne
 /* AI: 공격하려는 나라가 아직 적대가 아니면 먼저 선전포고한다 */
 function declareForOrders(pid,orders){if(!orders)return;for(let i=orders.length-1;i>=0;i--){const o=orders[i];const T=G.terr[o.to];if(!T||T.owner==null||T.owner===pid)continue;if(guestOK(pid,T)||isHostile(pid,T.owner))continue;
     if(!aiMayDeclare(pid,T.owner)){orders.splice(i,1);continue;}   // 허락되지 않은 선전포고 → 그 공격은 하지 않는다
-    const r=declareWar(pid,T.owner,{goal:pick(['land','land','capital','liberate'])});if(r&&r.ok){const p=G.players[pid];p.warCool=G.round+ri(10,16);}else orders.splice(i,1);}}
+    const r=declareWar(pid,T.owner,{goal:pick(['land','land','capital','liberate'])});if(r&&r.ok){const p=G.players[pid];p.warCool=G.round+ri(7,12);}else orders.splice(i,1);}}
 function breachCheck(pid,victim){
   const i=G.dips.findIndex(d=>d.from===pid&&d.to===victim);if(i>=0){G.dips.splice(i,1);log(`${pname(pid)}의 외교관이 ${pname(victim)}에 억류되었다.`,'warn');}
   const ts=G.treaties.filter(t=>(t.a===pid&&t.b===victim)||(t.a===victim&&t.b===pid));
@@ -1898,7 +1898,7 @@ function applyPolicies(pid){
 }
 /* ================= 봇 AI ================= */
 function terrPower(tid){const T=G.terr[tid];const td=TDEF[tid];const b=T.owner==null?CFG.defBase+TERRAIN[td.terrain].d+(KIND[td.kind].defb||0):defFormula(td,T);
-  let bb=b;if(T.owner!=null){const g=G.gens.filter(x=>x.owner===T.owner&&x.status==='ok'&&x.loc===tid).sort((x,y)=>y.def-x.def)[0];if(g)bb+=GEN_K*g.def*genScale(T.troops);}return T.troops*(1+bb);}
+  let bb=b;if(T.owner!=null){const g=G.gens.filter(x=>x.owner===T.owner&&x.status==='ok'&&x.loc===tid).sort((x,y)=>y.def-x.def)[0];if(g)bb+=GEN_K*g.def*genScale(T.troops);}let n=T.troops;if(T.owner!=null&&T.gst)Object.keys(T.gst).forEach(k=>{if(T.gst[k]>0&&treatyBetween(+k,T.owner,'alliance'))n+=T.gst[k];});return n*(1+bb);}
 function botRun(p,ph){if(!G||G.phase!==ph||!p.alive)return;try{if(ph==='plan'){botOps(p.id);botOrders(p.id);}}catch(e){console.error('bot',e);}p.ready=true;}
 function botsAct(ph){
   const order=G.players.slice();if(!hooks.realtime)order.sort(()=>Math.random()-0.5);
@@ -1978,7 +1978,12 @@ function botOrders(pid){
     for(const n of GEO.adj[s.id]){const T=G.terr[n];if(T.owner===pid||aiBarred(pid,n))continue;if(T.owner!=null&&(treatyBetween(pid,T.owner,'alliance')||truceLeft(pid,T.owner)>0))continue;const hs=T.owner!=null&&isHostile(pid,T.owner);if(G.tplId&&!hs)continue;if(p.neu&&G.tplId&&G.round>(p.warUntil||0))continue;if(p.neu&&T.owner!=null&&!hs&&!G.tplId)continue;if(T.owner!=null&&!hs&&treatyBetween(pid,T.owner)&&Math.random()>ignoreTreaty)continue;
       let e=byT.get(n);if(!e){e={n,srcs:[]};byT.set(n,e);}e.srcs.push({from:s.id,avail,sg});}}
   const cands=[];const vs=G.players.filter(o=>o.alive).sort((a,b)=>b.vp-a.vp);
-  byT.forEach(e=>{const T=G.terr[e.n];const hsT=T.owner!=null&&isHostile(pid,T.owner);const need=Math.max(terrPower(e.n)*1.4*p.aggr*press*(hsT?0.7:1)*(T.owner!=null&&T.owner===p.focus?0.88:1),terrPower(e.n)*1.2);e.srcs.sort((a,b)=>b.avail-a.avail);
+  /* 전투력 보정: 기술·숙련도·사기를 양쪽 모두 반영하고, 빈 땅이라도 옆에 다른 나라 군대가 있으면 그만큼 보낸다(충돌·역습 대비) */
+  const fMul=q=>{if(q==null)return 1;const P=G.players[q];return 1+Math.min(0.3,(P.vet||0)/300)+(clamp(P.morale*polMor(P),25,100)-60)*0.001;};const aM=fMul(pid)+techAtk(pid);
+  const threat=T=>{let m=0;GEO.adj[T.id].forEach(n=>{const N=G.terr[n];if(!N||N.owner==null||N.owner===pid||N.owner===T.owner&&T.owner==null)return;if(treatyBetween(pid,N.owner,'alliance'))return;if(T.owner!=null&&N.owner!==T.owner)return;m=Math.max(m,N.troops);});return m;};
+  /* 같은 땅을 두 나라가 동시에 노리면 먼저 닿은 쪽과 부딪혀 한쪽이 크게 진다 → 이미 다른 나라(동맹 제외)가 이번 턴 공격 명령을 낸 땅은 피한다 */
+  const claimed=n=>G.players.some(q=>q.id!==pid&&q.alive&&G.orders[q.id]&&G.orders[q.id].some(o=>!o.mv&&o.to===n)&&!treatyBetween(pid,q.id,'alliance'));
+  byT.forEach(e=>{if(claimed(e.n))return;const T=G.terr[e.n];const hsT=T.owner!=null&&isHostile(pid,T.owner);const dM=(fMul(T.owner)+(T.owner!=null?techDef(T.owner):0))/aM;const tp=terrPower(e.n)*dM;const th=threat(T);const need=Math.max(tp*1.4*p.aggr*press*(hsT?0.7:1)*(T.owner!=null&&T.owner===p.focus?0.88:1),tp*1.25,th*(T.owner==null?0.9:0.35)*dM+tp);e.srcs.sort((a,b)=>b.avail-a.avail);
     let tot=0;const used=[];for(const sr of e.srcs.slice(0,4)){used.push(sr);tot+=sr.avail*(1+(sr.sg?GEN_K*genScale(sr.avail)*sr.sg.atk:0));if(tot>=need)break;}
     if(tot<need)return;const ratio=Math.min(1,need*1.15/tot);
     const parts=used.map(sr=>({from:sr.from,n:Math.min(sr.avail,Math.max(CFG.minAttack,Math.ceil(sr.avail*ratio/10)*10)),gid:sr.sg?sr.sg.id:null}));
@@ -2923,7 +2928,7 @@ function aiMayDeclare(pid,qid){const p=G.players[pid],q=G.players[qid];if(!p||!q
   const per=PERSONA[p.persona]||PERSONA.opp;let okk=true;
   if((p.warCool||0)>G.round)okk=false;
   if(okk){const foes=G.players.filter(x=>x.alive&&x.id!==pid&&!x.neu&&!x.landless&&isHostile(pid,x.id)).length;const maxWars=p.persona==='turtle'?1:(p.persona==='conq'?3:2);if(foes>=maxWars)okk=false;}
-  if(okk){let pr=0.035*(per.war||1);if(p.grudge&&p.grudge[qid])pr+=0.05*p.grudge[qid];(p.obj||[]).forEach(o=>{if(!o.done&&(o.t==='capCap'||o.t==='dead'||o.t==='takeFrom')&&o.tg===qid)pr+=0.03;});if(treatyBetween(pid,qid,'nap'))pr*=0.4;okk=Math.random()<pr;}
+  if(okk){let pr=0.035*(per.war||1);{const free=owned(pid).some(t=>!t.sea&&GEO.adj[t.id].some(n=>{const N=G.terr[n];return N&&!N.sea&&N.owner==null;}));if(!free)pr+=0.06;const r=totalTroops(pid)/Math.max(1,totalTroops(qid));if(r>=1.4)pr+=0.05;if(r>=2)pr+=0.05;if(r<0.8)pr*=0.4;}if(p.grudge&&p.grudge[qid])pr+=0.05*p.grudge[qid];(p.obj||[]).forEach(o=>{if(!o.done&&(o.t==='capCap'||o.t==='dead'||o.t==='takeFrom')&&o.tg===qid)pr+=0.03;});if(treatyBetween(pid,qid,'nap'))pr*=0.4;okk=Math.random()<pr;}
   G.decl[k]={r:G.round,ok:okk};return okk;}
 
 /* ================= 호스트: 시야 필터 / 메시지 / 로비 ================= */
