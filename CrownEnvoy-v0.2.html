@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b17</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b18</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -628,11 +628,23 @@ function wiggle(rings,pin){const A=3.2,STEP=1;return rings.map(r=>{let o=[];cons
 function pinSet(lists){const nb=new Map();const key=p=>p[0]+','+p[1];
   lists.forEach(rs=>rs.forEach(r=>{const n=r.length;for(let i=0;i<n;i++){const k=key(r[i]),a=key(r[(i+n-1)%n]),b=key(r[(i+1)%n]);const nn=a<b?a+'|'+b:b+'|'+a;const e=nb.get(k);if(!e)nb.set(k,{n:1,s:nn});else{e.n++;if(e.s!==nn)e.s='*';}}}));
   const pin=new Set();nb.forEach((e,k)=>{if(e.n!==2||e.s==='*')pin.add(k);});return pin;}
+/* 방장 시계: 탭이 뒤로 가면 브라우저가 setInterval을 크게 늦춰 AI 차례·턴 진행이 멈추므로, 웹 워커 타이머로 돌린다(안 되면 setInterval) */
+const _hw={w:null,n:0,f:{}};
+function hEvery(fn,ms){try{if(!_hw.w){_hw.w=new Worker(URL.createObjectURL(new Blob(['const t={};onmessage=e=>{const d=e.data;if(d.s)t[d.i]=setInterval(()=>postMessage(d.i),d.ms);else{clearInterval(t[d.i]);delete t[d.i];}};'],{type:'text/javascript'})));_hw.w.onmessage=e=>{const g=_hw.f[e.data];if(g)try{g();}catch(err){console.error(err);}};}
+  const id='w'+(++_hw.n);_hw.f[id]=fn;_hw.w.postMessage({s:1,i:id,ms});return id;}catch(e){return setInterval(fn,ms);}}
+function hClear(h){if(typeof h==='string'){delete _hw.f[h];try{_hw.w.postMessage({s:0,i:h});}catch(e){}}else clearInterval(h);}
+/* 내륙에서 이웃 영토에 끼어 있는 아주 작은 조각(데이터 찌꺼기)은 지운다. 섬·해안 조각은 그대로 둔다 */
+function dropSlivers(T,B){const ar=r=>{let s=0;for(let i=0;i<r.length;i++){const a=r[i],c=r[(i+1)%r.length];s+=a[0]*c[1]-c[0]*a[1];}return Math.abs(s)/2;};
+  const own=new Map(),g=new Map();T.forEach((rs,ti)=>rs.forEach(r=>r.forEach(p=>{const k=p[0]+','+p[1];let e=own.get(k);if(!e)own.set(k,e=new Set());e.add(ti);})));
+  B.forEach(r=>r.forEach(p=>{const k=Math.floor(p[0])+','+Math.floor(p[1]);let a=g.get(k);if(!a)g.set(k,a=[]);a.push(p);}));
+  const coast=p=>{for(let dx=-2;dx<=2;dx++)for(let dy=-2;dy<=2;dy++){const a=g.get((Math.floor(p[0])+dx)+','+(Math.floor(p[1])+dy));if(a&&a.some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<1.2))return true;}return false;};
+  return T.map(rs=>{if(rs.length<2)return rs;const A=rs.map(ar),mx=Math.max(...A);
+    return rs.filter((r,i)=>A[i]===mx||A[i]>=12||!(r.filter(p=>own.get(p[0]+','+p[1]).size>1).length/r.length>0.5&&!r.some(coast)));});}
 const MAPS=MAPDATA.map(m=>({id:m.id,name:m.name,desc:m.desc,count:m.terr.length}));
 const _mapCache={};
 function mapBuild(i){if(_mapCache[i])return _mapCache[i];const m=MAPDATA[i];
   const tdef=m.terr.map(t=>({id:t.id,name:t.name,cc:t.cc,x:t.site[0],y:t.site[1],kind:t.kind,terrain:t.terrain,area:t.area,sea:t.kind==='sea',cu:t.cu||'mix'}));
-  const T=m.terr.map(t=>decRings(t.rings,m.q)),B=decRings(m.bg,m.q),LB=m.lb?decRings(m.lb,m.q):B;const pin=pinSet([...T,B,LB]);
+  const B=decRings(m.bg,m.q),LB=m.lb?decRings(m.lb,m.q):B,T=dropSlivers(m.terr.map(t=>decRings(t.rings,m.q)),B);const pin=pinSet([...T,B,LB]);
   const geo={polys:T.map(r=>wiggle(r,pin)),adj:m.adj,sadj:m.sadj||[],bg:wiggle(B,pin),base:m.lb?wiggle(LB,pin):null};geo.base=geo.base||geo.bg;return(_mapCache[i]={tdef,geo});}
 let TDEF=null,GEO=null,MAPID=0;
 function setMap(i){i=MAPDATA[i]?i:0;MAPID=i;const m=mapBuild(i);TDEF=m.tdef;GEO=m.geo;}
@@ -2960,7 +2972,7 @@ function makeView(pid,opts){const omni=!!(opts&&opts.omni);const DPT=cedeGeo();
 }
 const Host={seats:[],started:false,timer:null,mapId:0,snaps:[],
   snap(){try{this.snaps.push(JSON.stringify(G));if(this.snaps.length>4)this.snaps.shift();}catch(e){}},
-  continueGame(){if(Net.mode!=='solo'||!G||!G.over)return false;G.over=null;G.cont=true;G.endRound=null;G.dom=null;startPhase('plan');clearInterval(this.timer);this.timer=setInterval(()=>this.tick(),400);this.pushViews(true);return true;},
+  continueGame(){if(Net.mode!=='solo'||!G||!G.over)return false;G.over=null;G.cont=true;G.endRound=null;G.dom=null;startPhase('plan');hClear(this.timer);this.timer=hEvery(()=>this.tick(),400);this.pushViews(true);return true;},
   canUndo(){return !!G&&!G.over&&G.phase==='plan'&&this.seats.filter(s=>s.kind==='human').length===1&&this.snaps.length>=2;},
   init(name){this.specs=[];this.lastCaps=null;this.seats=[{kind:'human',name,local:true},{kind:'empty'},{kind:'empty'}];this.started=false;this.mapId=0;this.tplId=null;this.len=null;this.pub=false;this.cd=null;clearInterval(this.ltimer);},
   startLobbyTimer(){clearInterval(this.ltimer);this.cd=null;this.ltimer=setInterval(()=>this.lobbyTick(),1000);},
@@ -3026,7 +3038,7 @@ const Host={seats:[],started:false,timer:null,mapId:0,snaps:[],
     if(this.tplId)this.D={tpl:this.tplId,order:this.seats.map((_,i)=>i),idx:0,picks:this.seats.map(()=>null),deadline:0,botAt:0};
     else this.D={order:draftOrder(this.seats.length),idx:0,owner:TDEF.map(()=>-1),picks:this.seats.map(()=>[]),deadline:0,botAt:0};
     this.startMap=mapSent;this.seats.forEach((s,i)=>this.sendTo(i,{t:'start',you:i,map:mapSent,tpl:this.tplId,tplData:this.customTpl(this.tplId)||undefined}));(this.specs||[]).forEach(sp=>this.sendSpec(sp,{t:'start',you:-1,spec:true,map:mapSent,tpl:this.tplId,tplData:this.customTpl(this.tplId)||undefined}));this.draftStep();
-    clearInterval(this.timer);this.timer=setInterval(()=>this.tick(),400);},
+    hClear(this.timer);this.timer=hEvery(()=>this.tick(),400);},
   tplObj(){return this.D&&this.D.tpl?TEMPLATES.find(t=>t.id===this.D.tpl):null;},
   draftPush(){const D=this.D;if(!D)return;const msg={t:'draft',d:{tpl:D.tpl||null,order:D.order,idx:D.idx,owner:D.owner||null,picks:D.picks,remain:Math.max(0,D.deadline-Date.now()),names:this.seats.map(x=>x.name||''),total:DRAFT_N}};this.seats.forEach((s,i)=>this.sendTo(i,msg));(this.specs||[]).forEach(sp=>this.sendSpec(sp,msg));},
   draftStep(){const D=this.D;if(D.idx>=D.order.length){this.finishDraft();return;}const s=this.seats[D.order[D.idx]];const bot=s.kind==='bot';D.deadline=Date.now()+(bot?1200:(D.tpl?90000:(D.picks[D.order[D.idx]].length?10000:30000)));D.botAt=bot?Date.now()+600+Math.random()*500:0;this.draftPush();},
@@ -3041,7 +3053,7 @@ const Host={seats:[],started:false,timer:null,mapId:0,snaps:[],
     this.seats.forEach((s,i)=>this.sendTo(i,{t:'plan',caps:plan.caps}));(this.specs||[]).forEach(sp=>this.sendSpec(sp,{t:'plan',caps:plan.caps}));startPhase('plan');this.pushViews(true);},
   tick(){
     if(this.D&&!G){const D=this.D;const pid=D.order[D.idx];if(pid!=null&&(Date.now()>=D.deadline||(D.botAt&&Date.now()>=D.botAt))){if(D.tpl)this.pickNation(pid,pickNationBot(this.tplObj(),D.picks.filter(x=>x!=null)));else this.claim(pid,botPick(D.owner,pid));}else this.draftPush();return;}
-    if(!G||G.over){clearInterval(this.timer);this.pushViews();return;}
+    if(!G||G.over){hClear(this.timer);this.pushViews();return;}
     if(this.evHold&&this.evHold.size&&G.phase==='plan'){if(Date.now()-(this.evSince||0)>90000){this.evHold.clear();this.evSince=0;}else{G.phaseEnd+=400;this.pushViews();return;}}
     const humans=G.players.filter(p=>p.alive&&!p.isBot);const all=G.players.filter(p=>p.alive).every(p=>p.ready);
     if(Date.now()>=G.phaseEnd||all&&(humans.length>0||true)){const before=G.phase;advance();if(G.over){this.pushViews();return;}}
@@ -3060,16 +3072,16 @@ const Host={seats:[],started:false,timer:null,mapId:0,snaps:[],
   deleteSave(id){try{localStorage.removeItem('ce_sv_'+id);localStorage.setItem('ce_sv_idx',JSON.stringify(this.listSaves().filter(s=>s.id!==id)));}catch(_){}},
   loadGame(id,name){let sv=null;try{sv=JSON.parse(localStorage.getItem('ce_sv_'+id)||'null');}catch(_){sv=null;}if(!sv||!sv.G)return {ok:false,msg:'저장 파일을 읽지 못했어요.'};
     if(sv.tpl&&!TEMPLATES.some(t=>t.id===sv.tpl))return {ok:false,msg:'이 저장에 쓰인 시나리오를 찾을 수 없어요. (내 시나리오를 지웠을 수 있어요)'};
-    Net.mode='solo';Net.pub=false;Net.code='';this.init(name);this.seats[1]={kind:'bot',name:'AI 알프레드'};this.seats[2]={kind:'bot',name:'AI 베아트리스'};clearInterval(this.ltimer);clearInterval(this.timer);
+    Net.mode='solo';Net.pub=false;Net.code='';this.init(name);this.seats[1]={kind:'bot',name:'AI 알프레드'};this.seats[2]={kind:'bot',name:'AI 베아트리스'};clearInterval(this.ltimer);hClear(this.timer);
     setMap(sv.map);resetMap();applyUnit(10);CFG.maxGens=sv.tpl?8:4;hooks.realtime=true;hooks.toast=(pid,text)=>this.sendTo(pid,{t:'toast',text});hooks.evnow=(pid,ev)=>this.sendTo(pid,{t:'evnow',ev});
     this.started=true;this.tplId=sv.tpl;this.mapId=sv.map;this.startMap=sv.map;this.lastCaps=sv.caps||[];this.D=null;this._autoRound=null;this.evHold=null;this.evSince=0;
     (sv.caps||[]).forEach(t=>{if(TDEF[t])TDEF[t].kind='cap';});
     G=sv.G;G.phase='plan';G.phaseEnd=Date.now()+Math.max(45000,sv.left||0);G.players.forEach((p,i)=>{p.ready=!p.alive;if(i===0)p.isBot=false;});
     Object.assign(C,{view:null,draft:null,qSeen:null,evRound:null,phaseKey:null,reportPlayed:null,chId:null,sumData:null,orders:[],animating:false,queued:null});UI.stk=(UI.stk||[]).filter(x=>x!=='saves');
     this.sendTo(0,{t:'start',you:0,map:sv.map,tpl:sv.tpl});this.sendTo(0,{t:'plan',caps:this.lastCaps});this._autoRound=G.round;botsAct('plan');this.pushViews(true);
-    this.timer=setInterval(()=>this.tick(),400);return {ok:true};},
+    this.timer=hEvery(()=>this.tick(),400);return {ok:true};},
   /* 방장이 '시대/나라 고르기' 단계에서 로비로 돌아간다(게임이 아직 시작 전인 경우) */
-  backToLobby(){if(G&&!G.over&&G.round>1)return false;clearInterval(this.timer);G=null;this.D=null;this.started=false;this.evHold=null;this.seats.forEach(s=>{if(s.kind==='bot'&&s.away){s.kind='empty';}});resetMap();this.lobbyPush(true);if(this.pub)this.startLobbyTimer();return true;},
+  backToLobby(){if(G&&!G.over&&G.round>1)return false;hClear(this.timer);G=null;this.D=null;this.started=false;this.evHold=null;this.seats.forEach(s=>{if(s.kind==='bot'&&s.away){s.kind='empty';}});resetMap();this.lobbyPush(true);if(this.pub)this.startLobbyTimer();return true;},
   drop(i){if(this.evHold)this.evHold.delete(i);const s=this.seats[i];if(!s)return;
     if(!this.started){this.seats[i]={kind:'empty'};this.lobbyPush();return;}
     if(!G){s.humanName=s.humanName||s.name;s.kind='bot';s.away=true;s.name=s.humanName+' (AI)';return;}
