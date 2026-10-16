@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b16</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b17</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -618,16 +618,22 @@ function decRings(str,q){if(!str)return[];return str.split('.').map(r=>{const nu
 function _wh(x,y){let h=(x*374761393+y*668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295*2-1;}
 function _wn(x,y){const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
   const a=_wh(xi,yi),b=_wh(xi+1,yi),c=_wh(xi,yi+1),d=_wh(xi+1,yi+1);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;}
-function wiggle(rings){const A=3.6,STEP=1;return rings.map(r=>{const o=[];const n=r.length;
+function wiggle(rings,pin){const A=3.2,STEP=1;return rings.map(r=>{let o=[];const n=r.length;
   for(let k=0;k<n;k++){const p=r[k],q=r[(k+1)%n];const L=Math.hypot(q[0]-p[0],q[1]-p[1]);const m=Math.max(1,Math.ceil(L/STEP));
-    for(let j=0;j<m;j++){const x=p[0]+(q[0]-p[0])*j/m,y=p[1]+(q[1]-p[1])*j/m;const f=Math.max(0,Math.min(1,(Math.min(x,y,MAP_W-x,MAP_H-y)-2)/14))*A;
-      o.push(f?[x+f*(_wn(x/26,y/26)+0.55*_wn(x/9.5+31.7,y/9.5+17.3)+0.25*_wn(x/4+11.3,y/4+71.9)),y+f*(_wn(x/26+53.1,y/26+91.7)+0.55*_wn(x/9.5+77.9,y/9.5+5.1)+0.25*_wn(x/4+43.7,y/4+29.3))]:[x,y]);}}
-  return o;});}
+    for(let j=0;j<m;j++)o.push(j?[p[0]+(q[0]-p[0])*j/m,p[1]+(q[1]-p[1])*j/m,0]:[p[0],p[1],pin&&pin.has(p[0]+','+p[1])?1:0]);}
+  const N=o.length;if(N>4)for(let it=0;it<4;it++){const c=o.map(v=>v.slice());for(let i=0;i<N;i++){if(o[i][2]||Math.min(o[i][0],o[i][1],MAP_W-o[i][0],MAP_H-o[i][1])<2)continue;const a=o[(i+N-1)%N],b=o[(i+1)%N];c[i][0]=(a[0]+2*o[i][0]+b[0])/4;c[i][1]=(a[1]+2*o[i][1]+b[1])/4;}o=c;}
+  return o.map(([x,y])=>{const f=Math.max(0,Math.min(1,(Math.min(x,y,MAP_W-x,MAP_H-y)-2)/14))*A;
+    return f?[x+f*(_wn(x/26,y/26)+0.4*_wn(x/9.5+31.7,y/9.5+17.3)),y+f*(_wn(x/26+53.1,y/26+91.7)+0.4*_wn(x/9.5+77.9,y/9.5+5.1))]:[x,y];});});}
+/* 여러 지역이 만나는 꼭짓점(이웃이 달라지는 점)은 다듬을 때 고정해 두어, 이웃 경계가 같은 모양으로 맞물리게 한다 */
+function pinSet(lists){const nb=new Map();const key=p=>p[0]+','+p[1];
+  lists.forEach(rs=>rs.forEach(r=>{const n=r.length;for(let i=0;i<n;i++){const k=key(r[i]),a=key(r[(i+n-1)%n]),b=key(r[(i+1)%n]);const nn=a<b?a+'|'+b:b+'|'+a;const e=nb.get(k);if(!e)nb.set(k,{n:1,s:nn});else{e.n++;if(e.s!==nn)e.s='*';}}}));
+  const pin=new Set();nb.forEach((e,k)=>{if(e.n!==2||e.s==='*')pin.add(k);});return pin;}
 const MAPS=MAPDATA.map(m=>({id:m.id,name:m.name,desc:m.desc,count:m.terr.length}));
 const _mapCache={};
 function mapBuild(i){if(_mapCache[i])return _mapCache[i];const m=MAPDATA[i];
   const tdef=m.terr.map(t=>({id:t.id,name:t.name,cc:t.cc,x:t.site[0],y:t.site[1],kind:t.kind,terrain:t.terrain,area:t.area,sea:t.kind==='sea',cu:t.cu||'mix'}));
-  const geo={polys:m.terr.map(t=>wiggle(decRings(t.rings,m.q))),adj:m.adj,sadj:m.sadj||[],bg:wiggle(decRings(m.bg,m.q)),base:wiggle(decRings(m.lb||m.bg,m.q))};return(_mapCache[i]={tdef,geo});}
+  const T=m.terr.map(t=>decRings(t.rings,m.q)),B=decRings(m.bg,m.q),LB=m.lb?decRings(m.lb,m.q):B;const pin=pinSet([...T,B,LB]);
+  const geo={polys:T.map(r=>wiggle(r,pin)),adj:m.adj,sadj:m.sadj||[],bg:wiggle(B,pin),base:m.lb?wiggle(LB,pin):null};geo.base=geo.base||geo.bg;return(_mapCache[i]={tdef,geo});}
 let TDEF=null,GEO=null,MAPID=0;
 function setMap(i){i=MAPDATA[i]?i:0;MAPID=i;const m=mapBuild(i);TDEF=m.tdef;GEO=m.geo;}
 function resetMap(){delete _mapCache[MAPID];setMap(MAPID);}
