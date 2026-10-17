@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · b26</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · b27</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -1355,6 +1355,22 @@ function councilBot(pid){const p=G.players[pid];if(!p.alive||p.landless||G.counc
   const wars=[];for(let x=0;x<al.length;x++)for(let y=x+1;y<al.length;y++)if(isHostile(al[x].id,al[y].id))wars.push(1);
   let type='amity',tgt=null;if(pwRel(big.id)>0.6&&!treatyBetween(pid,big.id,'alliance')&&Math.random()<0.5){type='embargo';tgt=big.id;}else if(wars.length&&Math.random()<0.6)type='truce';
   councilOpen(pid,{type,tgt});}
+/* ===== 탐험과 유물: 항구에서 원정대를 보내 유물을 찾는다. 유물은 세상에 하나씩이고 수도를 빼앗기면 정복자에게 넘어간다 ===== */
+const RELICS={mask:{n:'황금 가면',ic:'🎭',d:'수입 +6%',fx:{tax:0.06}},map:{n:'고대 지도',ic:'🗺️',d:'외교 설득 +8%',fx:{dip:0.08}},drum:{n:'전쟁의 북',ic:'🥁',d:'공격 +5%',fx:{atk:0.05}},shield:{n:'신의 방패',ic:'🛡️',d:'요새 방어 +20%',fx:{fort:0.2}},scroll:{n:'학자의 두루마리',ic:'📜',d:'연구 속도 +8%',fx:{tech:0.08}},sword:{n:'영웅의 검',ic:'🗡️',d:'장군 경험 +30%',fx:{gxp:0.3}},horn:{n:'풍요의 뿔잔',ic:'🐂',d:'식량 소비 -12%',fx:{rsn:-0.12}},seal:{n:'용병왕의 인장',ic:'💠',d:'징집비 -10% · 유지비 -6%',fx:{cons:-0.1,upk:-0.06}}};
+const EXPED={ruin:{n:'가까운 폐허',ic:'🏺',cost:100,w:3,t:2,ch:0.6,gold:0,vp:0,d:'2턴 · 성공 60%'},far:{n:'먼 사막과 정글',ic:'🐪',cost:180,w:5,t:4,ch:0.55,gold:100,vp:0,d:'4턴 · 성공 55% · 금화 +100'},cont:{n:'미지의 대륙',ic:'🧭',cost:300,w:8,t:6,ch:0.4,gold:300,vp:4,d:'6턴 · 성공 40% · 금화 +300 · 승점 +4'}};
+const relicList=pid=>G.relics?Object.keys(G.relics).filter(k=>G.relics[k]===pid&&RELICS[k]):[];
+function expAct(pid,m){const p=G.players[pid],r=EXPED[m.route];if(G.phase!=='plan')return fail('계획 단계에서만 가능합니다.');if(!r)return fail('목적지 오류');if(p.exp)return fail('원정대가 이미 떠나 있어요.');
+  if(!owned(pid).some(t=>!t.sea&&isPort(t.id)))return fail('항구가 있어야 원정대를 보낼 수 있어요.');if(p.gold<r.cost)return fail(`금화가 부족합니다 (필요 ${r.cost})`);p.stock=p.stock||{};if((p.stock.wood||0)<r.w)return fail(`목재가 부족합니다 (필요 ${r.w})`);
+  p.gold-=r.cost;p.stock.wood-=r.w;p.exp={route:m.route,left:r.t};log(`${p.kingdom}이(가) ${r.n}(으)로 원정대를 보냈다.`,'sys');return ok(`${r.ic} 원정대가 ${r.n}(으)로 떠났어요. ${r.t}턴 뒤 돌아와요. (-${r.cost}금)`);}
+function relicTick(){G.relics=G.relics||{};
+  /* 수도가 남의 손에 넘어가면 유물도 넘어간다 */
+  Object.keys(G.relics).forEach(k=>{const h=G.players[G.relics[k]];if(!h)return;const cap=G.terr[h.cap];if(h.alive&&(!cap||cap.owner===h.id))return;const nw=cap&&cap.owner!=null&&G.players[cap.owner]&&G.players[cap.owner].alive?cap.owner:null;if(nw!=null&&nw!==h.id){G.relics[k]=nw;log(`${pname(nw)}이(가) ${pname(h.id)}의 ${RELICS[k].ic} ${RELICS[k].n}을(를) 손에 넣었다.`,'war');}else if(!h.alive)delete G.relics[k];});
+  G.players.forEach(p=>{if(!p.alive||!p.exp)return;if(--p.exp.left>0)return;const r=EXPED[p.exp.route];p.exp=null;
+    if(Math.random()>=r.ch){log(`${p.kingdom}의 ${r.n} 원정대가 돌아오지 못했다.`,'sys');hooks.toast(p.id,`${r.n} 원정대가 돌아오지 못했어요.`);return;}
+    const free=Object.keys(RELICS).filter(k=>!G.relics[k]);let txt='';if(free.length){const k=free[Math.floor(Math.random()*free.length)];G.relics[k]=p.id;txt=`${RELICS[k].ic} ${RELICS[k].n}`;}else p.gold+=Math.round(r.cost*1.5);
+    p.gold+=r.gold;p.vp=(p.vp||0)+r.vp;log(`${p.kingdom}의 ${r.n} 원정대가 ${txt||'보물'}을(를) 가지고 돌아왔다!${r.vp?' 새 땅이 알려졌다.':''}`,'sys');hooks.toast(p.id,`원정 성공! ${txt||'보물'}${r.gold?' · 금화 +'+r.gold:''}`);wlog('ally',p.id,null,`${snm(p.id)}의 원정대가 ${txt||'보물'}을(를) 찾았다`);});}
+function expBot(pid){const p=G.players[pid];if(!p.alive||p.landless||p.exp||p.gold<420||!owned(pid).some(t=>!t.sea&&isPort(t.id)))return;if(((p.stock||{}).wood||0)<8){extAct(pid,{a:'mkt',op:'buy',good:'wood',n:10});return;}
+  const ro=Math.random();extAct(pid,{a:'expedition',route:p.gold>800&&ro<0.3?'cont':ro<0.6?'far':'ruin'});}
 function formBot(pid){const p=G.players[pid];if(!p.alive||p.landless)return;const seen=p.seenF||{};const foes=Object.keys(seen).filter(o=>G.players[o]&&G.players[o].alive&&isHostile(pid,+o));
   if(foes.length&&Math.random()<0.6){const o=pick(foes),beatIt=Object.keys(FORMS).find(k=>FORMS[k].beats===seen[o]);if(beatIt){p.form=beatIt;return;}}
   if(!p.form||Math.random()<0.5)p.form=pick(Object.keys(FORMS));}
@@ -1470,7 +1486,7 @@ function extNew(){
   if(G.over)return;
   /* 이중간첩: 6턴 동안 매턴 정탐과 금화 */
   G.players.forEach(p=>{if(!p.alive||!p.agents)return;Object.keys(p.agents).forEach(k=>{if(p.agents[k]<G.round){delete p.agents[k];return;}const q=G.players[k];if(!q||!q.alive){delete p.agents[k];return;}p.scouts[k]=G.round;const st=Math.min(15,Math.round(q.gold*0.05));if(st>0){q.gold-=st;p.gold+=st;}});});
-  seasonExtra();convoyTick();marketTick();bldTick();councilTick();infTick();histTick();fieldTick();
+  seasonExtra();convoyTick();marketTick();bldTick();councilTick();relicTick();infTick();histTick();fieldTick();
   rsTick();G.gv=(G.gv||0)+1;
   if(G.deals)G.deals=G.deals.filter(d=>{const a=G.players[d.a],b=G.players[d.b];if(!a||!b||!a.alive||!b.alive||d.until<G.round||isHostile(d.a,d.b)||isEmb(d.a,d.b))return false;{const mv=(f,t,g)=>{if(!g||!GOODS[g])return;f.stock=f.stock||{};t.stock=t.stock||{};const x=Math.min(3,f.stock[g]||0);f.stock[g]-=x;t.stock[g]=Math.min(STK,(t.stock[g]||0)+x);};mv(a,b,d.ga);mv(b,a,d.gb);}if(d.gold){const pay=d.gold>0?a:b,rec=d.gold>0?b:a;const x=Math.min(Math.abs(d.gold),Math.max(0,pay.gold));pay.gold-=x;rec.gold+=x;}return true;});
   /* 세계 사건 */
@@ -2416,7 +2432,7 @@ function faithGuess(p,y){const k=p.nkey,c=p.cult,n=String(p.kingdom||'');
   if(c==='mix')return 'ath';
   return 'chr';}
 function polEnsure(p){if(!p)return;if(!p.gov||!GOV[p.gov])p.gov=govGuess(p,polYear());if(!p.fai||!FAITH[p.fai])p.fai=faithGuess(p,polYear());if(p.pub==null)p.pub=60;}
-function polFx(p){const f={};if(!p)return f;polEnsure(p);const add=o=>Object.keys(o).forEach(k=>f[k]=(f[k]||0)+o[k]);add(GOV[p.gov].fx);add(FAITH[p.fai].fx);wdList(p.id).forEach(k=>add(WONDERS[k].fx));return f;}
+function polFx(p){const f={};if(!p)return f;polEnsure(p);const add=o=>Object.keys(o).forEach(k=>f[k]=(f[k]||0)+o[k]);add(GOV[p.gov].fx);add(FAITH[p.fai].fx);wdList(p.id).forEach(k=>add(WONDERS[k].fx));relicList(p.id).forEach(k=>add(RELICS[k].fx));return f;}
 const pfx=(pid,k)=>{const p=pid!=null&&G.players[pid];return p?(polFx(p)[k]||0):0;};
 const inGovT=p=>p.govUntil!=null&&G.round<p.govUntil;
 const inFaiT=p=>p.faiUntil!=null&&G.round<p.faiUntil;
@@ -2473,7 +2489,7 @@ function scenEvTick(){(G.pendNews||[]).forEach(n=>{(G.turnEvents=G.turnEvents||[
   if(!head)return;if(e.txt&&e.k!=='news'){body=head;head=String(e.txt).slice(0,80);}
   log(head,'event');(G.turnEvents=G.turnEvents||[]).push({r:G.round,date:ymOf(G.round),head,body,scene:({war:'declaration',peace:'treaty',ally:'treaty',revolt:'revolution'})[e.k]||'meeting',ca:A?A.color:'#c9a24a',cb:B?B.color:(A?A.color:'#c9a24a'),pids:[A&&A.id,B&&B.id].filter(x=>x!=null)});});}
 /* ---------- AI의 확장 행동 ---------- */
-function extBot(pid){const p=G.players[pid];if(!p.alive||p.landless)return;try{botTrade(pid);}catch(e){console.error('botTrade',e);}try{bldBot(pid);}catch(e){console.error('bldBot',e);}try{formBot(pid);}catch(e){console.error('formBot',e);}try{councilBot(pid);}catch(e){console.error('councilBot',e);}if(Math.random()<0.12)try{wdBot(pid);}catch(e){console.error('wdBot',e);}
+function extBot(pid){const p=G.players[pid];if(!p.alive||p.landless)return;try{botTrade(pid);}catch(e){console.error('botTrade',e);}try{bldBot(pid);}catch(e){console.error('bldBot',e);}try{formBot(pid);}catch(e){console.error('formBot',e);}try{councilBot(pid);}catch(e){console.error('councilBot',e);}if(Math.random()<0.15)try{expBot(pid);}catch(e){console.error('expBot',e);}if(Math.random()<0.12)try{wdBot(pid);}catch(e){console.error('wdBot',e);}
   if(p.gold>380&&Math.random()<0.1){const foes=G.players.filter(q=>q.alive&&q.id!==pid&&isHostile(pid,q.id));if(foes.length){const q=pick(foes),k=pick(Object.keys(SPY));if(p.gold>SPY[k].cost+250)extAct(pid,{a:'spy',kind:k,to:q.id});}}
   if((!G.tplId||G.tplId==='age')&&p.gold>260&&Math.random()<0.45){const tg=colTargets(pid);const ids=Object.keys(tg).sort((a,b)=>tg[a]-tg[b]);if(ids.length&&p.gold>tg[ids[0]]+150)extAct(pid,{a:'colonize',tid:+ids[0]});}
   const ov=overlordOf(pid);if(ov!=null&&warBalance(pid,ov)>0.35&&Math.random()<0.12)extAct(pid,{a:'vassal',op:'revolt',to:ov});}
@@ -2498,6 +2514,7 @@ function extAct(pid,m){const p=G.players[pid];const inPlan=G.phase==='plan';if(m
     if((T.bl||[]).length>=bslots(T))return fail('건물 칸이 가득 찼어요. 도시를 키우면 칸이 늘어요.');if(b.port&&!isPort(T.id))return fail('항구 영토에만 지을 수 있어요.');if(p.gold<b.cost)return fail(`금화가 부족합니다 (필요 ${b.cost})`);p.stock=p.stock||{};const wd=b.w||0;if((p.stock.wood||0)<wd)return fail(`목재가 부족합니다 (필요 ${wd})`);
     p.gold-=b.cost;p.stock.wood-=wd;T.bl=(T.bl||[]).concat([m.b]);T.blO=pid;T.mark={k:'build',t:b.n,until:G.round+2};log(`${p.kingdom}이(가) ${TDEF[T.id].name}에 ${b.n}을(를) 지었다.`,'sys');return ok(`${TDEF[T.id].name}에 ${b.ic} ${b.n}을(를) 지었습니다. (-${b.cost}금)`);}
   case 'council':return councilOpen(pid,m);
+  case 'expedition':return expAct(pid,m);
   case 'form':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');if(!FORMS[m.f])return fail('대형 오류');p.form=m.f;return ok(`전투 대형: ${FORMS[m.f].ic} ${FORMS[m.f].n}`);}
   case 'wonder':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');const T=G.terr[+m.tid];const w=WONDERS[m.k];if(!T||T.sea||T.owner!==pid||!w)return fail('내 도시를 선택하세요.');if(!((T.city||0)>=1))return fail('도시 1단계 이상인 영토에만 지을 수 있어요.');if(T.wd||T.wp)return fail('이 영토에는 이미 불가사의가 있어요.');if(wdTaken(m.k))return fail('그 불가사의는 세상에 하나뿐이고 이미 누군가 지었어요.');if(wdBusy(pid)>=WMAX)return fail(`불가사의는 나라마다 ${WMAX}개까지예요.`);
     if(p.gold<WCOST)return fail(`금화가 부족합니다 (필요 ${WCOST})`);p.stock=p.stock||{};if((p.stock.wood||0)<WWOOD)return fail(`목재가 부족합니다 (필요 ${WWOOD})`);
@@ -3011,12 +3028,13 @@ function makeView(pid,opts){const omni=!!(opts&&opts.omni);const DPT=cedeGeo();
       const o={id:p.id,name:p.name,kingdom:p.kingdom,color:p.color,isBot:p.isBot,flag:p.flag||null,vet:Math.round(p.vet||0),wounded:(G.wounded||[]).filter(w=>w.pid===p.id).reduce((s,w)=>s+w.n,0),alive:p.alive,eth:ethOf(p),foes:G.players.filter(y=>y.alive&&y.id!==p.id&&isHostile(p.id,y.id)).map(y=>y.id),persona:(p.persona&&PERSONA[p.persona])?PERSONA[p.persona].n:null,...(p.id!==pid?(()=>{const ch=hasChannel(pid,p.id);const r=ch?opnOf(p.id,pid):null;const m2=ch?opnOf(pid,p.id):null;return {ch,near:touching(pid,p.id),rel:r?{t:r.total,l:r.label,items:r.items.slice().sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,9)}:null,rel2:m2?m2.total:null};})():{}),vp:p.vp,perf:Math.round(p.vp/Math.max(1,(p.baseVP||10)*Math.max(1,G.round))*100),oc:(p.obj&&p.obj.length)?[p.obj.filter(x=>x.done).length,p.obj.length]:null,hostile:p.id!==pid&&isHostile(pid,p.id),trust:Math.round(p.trust),ready:p.ready,terrs:owned(p.id).length,cap:p.cap,tier:tierOf(totalTroops(p.id)),moraleTier:p.morale>=70?'높음':p.morale>=45?'보통':'낮음',scouted:p.id!==pid&&me.scouts[p.id]===G.round,ally:p.id!==pid&&allied(p.id),diplo:p.id!==pid&&dipIn(p.id),landless:!!p.landless,over:overlordOf(p.id)};
       polEnsure(p);o.gov=p.gov;o.fai=p.fai;
       if(eco){o.gold=Math.round(p.gold);o.stab=Math.round(p.stab);o.fat=Math.round(p.fat);o.pub=Math.round(pubOf(p));}
-      o.gown=[...ownGoods(p.id)];if(p.id===pid||omni)o.form=formOf(p.id);if(p.id===pid||(G.players[pid]&&G.players[pid].peek&&G.players[pid].peek[p.id]>=G.round)||dipIn(p.id)||allied(p.id)||omni||G.treaties.some(x=>(x.type==='trade'||x.type==='alliance')&&((x.a===pid&&x.b===p.id)||(x.b===pid&&x.a===p.id))))o.gstock=Object.assign({},p.stock||{});
+      o.gown=[...ownGoods(p.id)];if(p.id===pid||omni){o.form=formOf(p.id);if(p.exp)o.exp={route:p.exp.route,left:p.exp.left};}if(p.id===pid||(G.players[pid]&&G.players[pid].peek&&G.players[pid].peek[p.id]>=G.round)||dipIn(p.id)||allied(p.id)||omni||G.treaties.some(x=>(x.type==='trade'||x.type==='alliance')&&((x.a===pid&&x.b===p.id)||(x.b===pid&&x.a===p.id))))o.gstock=Object.assign({},p.stock||{});
       if(full){o.troops=totalTroops(p.id);o.morale=Math.round(clamp(p.morale*polMor(p),0,100));}
       if(p.id===pid){o.fin=Object.assign({},p.fin||{});o.rs={need:rsNeed(pid),prod:rsProd(pid),short:Object.assign({},p.short||{}),rev:Math.round(shortRev(p)*100)};o.mor=morView(p);o.pendN=pendOf(pid);o.cvmax=convMax(pid);o.ut=[utier(pid,'i'),utier(pid,'c'),utier(pid,'a')];o.tav=[convAvail(pid,'i'),convAvail(pid,'c'),convAvail(pid,'a')];o.obj=objView(p);o.fcost=fortCostOf(pid);o.tcost=trenchCostOf(pid);o.scost=scoutCostOf(pid);o.goals=(p.goals||[]).map(g=>({k:g.k,enemy:g.enemy,prog:g.prog,done:g.done,need:GOALS[g.k].need,n:GOALS[g.k].n}));o.ww=Math.round(p.ww||0);o.tariff=Object.assign({},p.tariff||{});o.autoSell=p.autoSell||0;o.tbk={route:routeGold(pid),market:marketGold(pid),imp:importGold(pid)};o.deals=(G.deals||[]).filter(d=>d.until>=G.round&&(d.a===pid||d.b===pid)).map(d=>{const mineA=d.a===pid;return {id:d.id,w:mineA?d.b:d.a,give:mineA?d.ga:d.gb,get:mineA?d.gb:d.ga,gold:mineA?d.gold:-d.gold,left:d.until-G.round};});o.convoys=(G.convoys||[]).filter(c=>c.owner===pid).map(c=>({to:c.to,left:Math.max(0,c.due-G.round),v:c.value}));{const gg=goodsOf(pid);o.goods={own:[...gg.own],imp:[...gg.imp]};o.tin=tradeIncome(pid);}o.income=income(pid);o.upkeep=upkeep(pid);o.capacity=capacity(pid);o.under=underdog(pid);o.pol=polView(pid);}
       return o;}),
     terr:G.terr.map(t=>{const full=t.owner==null||sees(t.owner);const o={id:t.id,plg:t.plg||0,burn:(t.burn||0)>=G.round?1:0,port:(!t.sea&&isPort(t.id))?(blockaded(t.id,t.owner==null?-1:t.owner)&&t.owner!=null?2:1):0,owner:t.owner,fort:t.fort,trench:t.trench||0,oos:t.oos?1:0,siege:t.siege||0,unrest:t.unrest,dp:DPT.dp[t.id],cd:DPT.cd[t.id],tier:tierOf(t.troops)};if(t.mark&&t.mark.until>=G.round)o.mk={k:t.mark.k,t:t.mark.t};if(t.post)o.post=t.post.by;if(t.wd)o.wd=t.wd;if(t.wp)o.wp={k:t.wp.k,left:t.wp.left};if(full){if(t.bl)o.bl=t.bl.slice();o.troops=t.troops;if(t.troops>0){const cu=compOf(t);o.u=[cu.i,cu.c,cu.a];if(t.owner!=null){const vf=vfOf(t),r2=x=>Math.round(x*100)/100;o.uv=[vf.i.map(r2),vf.c.map(r2),vf.a.map(r2)];const ow=t.owner!=null?G.players[t.owner]:null;if(ow){let xl=0;['i','c','a'].forEach(k=>{const j=vf[k].indexOf(Math.max(...vf[k]));xl=Math.max(xl,xlv(ow,k,j));});o.xl=xl;}}}}if(t.inf&&!t.sea){let tk=-1,tv=0;Object.keys(t.inf).forEach(k=>{if(t.inf[k]>tv){tv=t.inf[k];tk=+k;}});const mm=t.inf[pid]||0;if(t.owner===pid&&tv>0)o.inf={m:0,k:tk,tv};else if(mm>0)o.inf={m:mm,k:pid,tv:mm};}if(t.gst&&t.gst[pid]>0){o.mygst=t.gst[pid];{const gu=compOf(t,pid);o.gu=[gu.i,gu.c,gu.a];}}if(t.owner===pid&&!t.sea){if(t.mc&&t.mc.length){o.mcn=t.mc.reduce((q,x)=>q+x.n,0);o.mcl=Math.max(...t.mc.map(x=>x.until))-G.round+1;}o.city=t.city||0;o.mkt=t.mkt||0;o.mcost=(isPort(t.id)&&(t.mkt||0)<2)?MKT_COST[t.mkt||0]:0;o.ccap=conscriptCap(t);o.dr=t.drafted||0;if(t.pend)o.pend=t.pend.reduce((q,x)=>q+x.n,0);o.ccost=(t.city||0)<CITY_MAX?cityCostOf(pid,t.city||0):0;}if(t.owner===pid&&t.gst){const sg=Object.keys(t.gst).reduce((a,k)=>a+(t.gst[k]||0),0);if(sg>0)o.allyg=sg;}return o;}),
     gens:G.gens.filter(g=>g.status!=='dead').map(g=>{const full=g.owner===pid||sees(g.owner)||g.captor===pid;const o={id:g.id,owner:g.owner,name:g.name,xp:g.xp||0,grade:gradeOf(g),loc:g.loc,status:g.status,captor:g.captor};if(full){o.atk=g.atk;o.def=g.def;o.lead=g.lead;o.trait=g.trait;}return o;}),
+    relics:Object.assign({},G.relics||{}),
     council:G.council?{host:G.council.host,type:G.council.type,tgt:G.council.tgt,inv:G.council.inv.length,att:G.council.att.length,mine:G.council.att.includes(pid)?1:G.council.no.includes(pid)?-1:0}:null,cd:(G.players[pid]&&G.players[pid].councilCd)||0,
     guar:(G.guar||[]).filter(x=>x.until>=G.round&&(omni||x.from===pid||x.to===pid||true)).map(x=>({...x})),emb:(G.emb||[]).filter(x=>x.until>=G.round&&(omni||x.from===pid||x.to===pid)).map(x=>({...x})),
     dips:G.dips.map(d=>({...d})),treaties:G.treaties.filter(t=>omni||!t.secret||t.a===pid||t.b===pid).map(t=>({...t})),props:omni?[]:G.props.filter(x=>x.from===pid||x.to===pid).map(x=>({...x})),
@@ -4575,7 +4593,7 @@ const UI={
     if(v.phase==='report')h+=UI.reportHTML();
     if(v.phase==='plan')h+=UI.ordersHTML();
     if(C.sel!=null)h+=UI.terrHTML();
-    h+=UI.polHTML()+UI.formHTML()+UI.genHTML()+UI.rivalHTML();return h;},
+    h+=UI.polHTML()+UI.formHTML()+UI.expHTML()+UI.genHTML()+UI.rivalHTML();return h;},
   ordersHTML(){
     const v=C.view;const used={};C.orders.forEach(o=>used[o.from]=(used[o.from]||0)+o.n);const genUsed=new Set(C.orders.map(o=>o.gid).filter(Boolean));
     let h=`<h3>병력 명령 <span class="muted sm">${C.orders.length?C.orders.length+'건':''}</span></h3>`;
@@ -4656,6 +4674,12 @@ const UI={
     else{const wait=(v.cd||0)-v.round;const ops=v.players.filter(p=>p.id!==v.me&&p.alive&&!p.landless);
       h+=`<div class="muted">누구나 회의를 소집할 수 있어요. 초대받은 나라는 참석 여부를 정하고, <b>소집한 나라가 강할수록 더 많이 와요</b>. 참석국이 충분하면 안건이 시행돼요. (${COUNCIL_COST}금, ${COUNCIL_CD}턴에 한 번)</div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><select id="cuType">${Object.keys(AGENDA).map(k=>`<option value="${k}">${AGENDA[k].ic} ${AGENDA[k].n}</option>`).join('')}</select><select id="cuTgt" title="금수 제재 대상">${ops.map(p=>`<option value="${p.id}">${esc(p.kingdom.split('(')[0])}</option>`).join('')}</select><button class="btn sm primary" data-act="council" ${plan&&wait<=0&&me.gold>=COUNCIL_COST?'':'disabled'}>소집하기${wait>0?' ('+wait+'턴 뒤)':''}</button></div><div class="muted" style="margin-top:4px">${Object.keys(AGENDA).map(k=>AGENDA[k].ic+' '+AGENDA[k].d).join(' · ')}</div>`;}
     return h+`</div>`;},
+  expHTML(){
+    const v=C.view,me=mePl();if(!me||v.spec)return '';const R=v.relics||{},mine=Object.keys(R).filter(k=>R[k]===v.me&&RELICS[k]),port=v.terr.some(t=>t.owner===v.me&&t.port),plan=v.phase==='plan';
+    let h=`<details class="acc" data-acc="exp" ${C.acc.exp?'open':''}><summary>탐험과 유물<small>${mine.length}/${Object.keys(RELICS).length}${me.exp?' · 원정 중':''}</small></summary><div class="accb">`;
+    if(me.exp){const r=EXPED[me.exp.route];h+=`<div class="card sm"><b>${r.ic} ${r.n}</b> 원정대가 떠나 있어요 · ${me.exp.left}턴 뒤 돌아와요.</div>`;}
+    else h+=`<div class="row" style="gap:6px;flex-wrap:wrap">`+Object.keys(EXPED).map(k=>{const r=EXPED[k];return `<button class="btn sm" data-act="expedition" data-route="${k}" ${plan&&port&&me.gold>=r.cost&&((me.gstock||{}).wood||0)>=r.w?'':'disabled'} title="${esc(r.d)}">${r.ic} ${r.n} · ${r.cost}금 · 🪵${r.w}</button>`;}).join('')+`</div><div class="sm muted" style="margin-top:6px">${port?'항구에서 원정대를 보내 유물을 찾아요. 실패하면 돌아오지 못해요.':'항구가 있어야 보낼 수 있어요.'}</div>`;
+    h+=`<div style="margin-top:8px">`+Object.keys(RELICS).map(k=>{const o=R[k],x=RELICS[k];return `<div class="sm" style="padding:2px 0;${o==null?'opacity:.55':''}"><b>${o==null?'❔ 아직 발견되지 않음':x.ic+' '+x.n}</b> <span class="muted">${o==null?'':x.d+' · '+(o===v.me?'내 유물':esc(v.players[o]?v.players[o].kingdom.split('(')[0]:''))}</span></div>`;}).join('')+`</div><div class="sm muted" style="margin-top:6px">유물은 세상에 하나씩이고, 수도를 빼앗기면 정복자에게 넘어가요.</div></div></details>`;return h;},
   formHTML(){
     const v=C.view,me=mePl();if(!me||v.spec)return '';const cur=me.form||'line',can=v.phase==='plan';
     return `<details class="acc" data-acc="form" ${C.acc.form?'open':''}><summary>전투 대형<small>${FORMS[cur].ic} ${FORMS[cur].n}</small></summary><div class="accb">
@@ -4855,6 +4879,7 @@ const UI={
       case 'autosell':send({a:'autosell',lv:+d.lv});break;
       case 'bld':send({a:'bld',tid:+d.tid,b:d.b});break;
       case 'council':{const ty=document.getElementById('cuType'),tg=document.getElementById('cuTgt');if(ty)send({a:'council',type:ty.value,tgt:tg?+tg.value:null});break;}
+      case 'expedition':send({a:'expedition',route:d.route});break;
       case 'form':send({a:'form',f:d.f});break;
       case 'wonder':send({a:'wonder',tid:+d.tid,k:d.k});break;
       case 'post':send({a:'post',tid:+d.tid});break;
