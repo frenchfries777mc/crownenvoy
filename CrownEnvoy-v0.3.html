@@ -363,7 +363,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 33</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 34</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -644,6 +644,7 @@ function dropSlivers(T,B){const ar=r=>{let s=0;for(let i=0;i<r.length;i++){const
     return rs.filter((r,i)=>A[i]===mx||A[i]>=12||!(r.filter(p=>own.get(p[0]+','+p[1]).size>1).length/r.length>0.5&&!r.some(coast)));});}
 /* ===== 큼직한 영토: 남아메리카·동남아시아·아프리카의 작은 행정구역을 같은 나라 안에서 이웃끼리 합친다 (세계·아메리카·아프리카 지도) =====
    합친 영토는 번호가 새로 매겨지므로, 옛 번호를 쓰는 역사 템플릿·내 시나리오는 remapTpl로 새 번호에 맞춘다. */
+MAPDATA.forEach(m=>{if(m&&m.terr)m.terr.forEach(t=>{if(t.name==='Yambol')t.name='Istanbul';});});
 const MREV=2,MERGE_T=400,MERGE_MAXN=5;
 const MERGE_CC=new Set(['콜롬비아','베네수엘라','에콰도르','브라질','가이아나','수리남','페루','볼리비아','칠레','아르헨티나','파라과이','우루과이','미얀마','태국','라오스','베트남','캄보디아','필리핀','말레이시아','인도네시아','브루나이','동티모르','모로코','알제리','튀니지아','서사하라','리비아','이집트','모리타니','말리','니제르','차드','수단','에리트레아','세네갈','기네비쏘','감비아','기니','시에라 리온','코트디부아르','부르키나파소','가나','베냉','나이지리아','카메룬','중앙 아프리카','남수단','이디오피아','지부티','SOL','소말리아','라이베리아','토고','적도 기니','가봉','콩고','콩고 민주 공화국','우간다','케냐','앙골라','르완다','부룬디','탄자니아','잠비아','짐바브웨 공화국','모잠비크','말라위','마다가스카르','나미비아','보츠와나','남아프리카','레소토','스와질란드']);
 function mergeMapData(m){
@@ -688,6 +689,7 @@ function remapTpl(t){const m=t&&MAPDATA[t.map];if(!m||!m.o2n||t.mrev===MREV)retu
   (t.guests||[]).forEach(g=>{if(Number.isInteger(g.region))g.region=o[g.region];});(t.regionDefs||[]).forEach(g=>{if(Number.isInteger(g.id))g.id=o[g.id];});
   t.mrev=MREV;return t;}
 TEMPLATES.forEach(remapTpl);
+TEMPLATES.forEach(t=>{if(t.custom||!(t.year>1453)||!MAPDATA[t.map])return;const m=MAPDATA[t.map],y=m.terr.find(x=>x.name==='Istanbul');if(!y)return;const ni=t.nations.findIndex(n=>(n.k==='ott'||n.k==='tur')&&['Kütahya','Balikesir','Afyonkarahisar'].includes((m.terr[n.cap]||{}).name));if(ni<0)return;const po=t.owner[y.id];t.owner[y.id]=ni;t.nations[ni].cap=y.id;if(po>=0&&po!==ni&&t.nations[po])t.nations[po].count=Math.max(1,(t.nations[po].count||1)-1);t.nations[ni].count=(t.nations[ni].count||0)+(po===ni?0:1);});
 const MAPS=MAPDATA.map(m=>({id:m.id,name:m.name,desc:m.desc,count:m.terr.length}));
 const _mapCache={};
 function mapBuild(i){if(_mapCache[i])return _mapCache[i];const m=MAPDATA[i];
@@ -695,7 +697,8 @@ function mapBuild(i){if(_mapCache[i])return _mapCache[i];const m=MAPDATA[i];
   const B=decRings(m.bg,m.q),LB=m.lb?decRings(m.lb,m.q):B,T=dropSlivers(m.terr.map(t=>Array.isArray(t.rings)?t.rings:decRings(t.rings,m.q)),B);const pin=pinSet([...T,B,LB]);
   const geo={polys:T.map(r=>wiggle(r,pin)),adj:m.adj,sadj:m.sadj||[],bg:wiggle(B,pin),base:m.lb?wiggle(LB,pin):null};geo.base=geo.base||geo.bg;return(_mapCache[i]={tdef,geo});}
 let TDEF=null,GEO=null,MAPID=0;
-function setMap(i){i=MAPDATA[i]?i:0;MAPID=i;const m=mapBuild(i);TDEF=m.tdef;GEO=m.geo;}
+function ctName(tid){const tp=tid&&TEMPLATES.find(t=>t.id===tid);const nm=(tp&&!tp.custom&&tp.year!=null&&tp.year<=1453)?'Constantinople':'Istanbul';TDEF.forEach(td=>{if(td.name==='Istanbul'||td.name==='Constantinople')td.name=nm;});}
+function setMap(i){i=MAPDATA[i]?i:0;MAPID=i;const m=mapBuild(i);TDEF=m.tdef;GEO=m.geo;let tp0=null;try{tp0=C.tplId;}catch(e){}ctName(tp0);}
 function resetMap(){delete _mapCache[MAPID];setMap(MAPID);}
 setMap(0);
 
@@ -893,7 +896,7 @@ function nameFor(pid){const p=G.players[pid];const pool=CULT[p.cult]||CULT.mix;p
 function startGens(i,plan){const nt=plan&&plan.nations&&plan.nations[i];const out=[];
   if(nt&&nt.gens&&nt.gens.length){const rv=(v,fx)=>fx?v:clamp(v+ri(-1,1),1,5);nt.gens.forEach(x=>{out.push({name:x.n==='@'?nameFor(i):x.n,atk:rv(x.a,x.fx),def:rv(x.d,x.fx),lead:rv(x.l,x.fx),trait:x.t||pick(TRAIT_POOL)});});return out;}
   const ks=TRAIT_POOL;for(let k=0;k<2;k++)out.push({name:nameFor(i),atk:ri(2,5),def:ri(2,5),lead:ri(2,5),trait:pick(ks)});return out;}
-function newGame(defs,plan){if(typeof Host!=='undefined')Host.snaps=[];
+function newGame(defs,plan){if(typeof Host!=='undefined')Host.snaps=[];ctName(plan&&plan.tpl);
   applyUnit(10);CFG.maxGens=plan&&plan.tpl?8:4;resetMap();plan=plan||autoPlan(defs.length);const n=plan.caps.length;plan.caps.forEach(t=>{TDEF[t].kind='cap';});
   G={round:1,phase:'plan',phaseEnd:0,pol:{},lastOrders:{},players:[],terr:[],gens:[],dips:[],treaties:[],props:[],log:[],uid:1,draft:{},orders:{},report:null,over:null};
   for(let i=0;i<n;i++){const d=defs[i]||{name:'AI '+(i-defs.length+1),isBot:true};
