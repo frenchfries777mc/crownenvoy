@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b19</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b20</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -746,7 +746,8 @@ const PRICE={wood:8,meat:10,flour:7,spice:16};
 /* 자원: 목재는 영토(숲은 매턴, 나머지는 2턴에 1), 밀가루·고기·향신료는 곡창·도축장·시장에서 난다. 밀가루·고기·향신료는 영토 수에 비례해 매턴 소모 */
 const STK=99,RS_NEED={flour:0.4,meat:0.25,spice:0.15},RS_PROD={gran:['flour',4],slau:['meat',3],mart:['spice',2]};
 const landN=pid=>owned(pid).filter(t=>!t.sea).length;
-function rsNeed(pid){const n=landN(pid),r={};Object.keys(RS_NEED).forEach(k=>r[k]=n?Math.ceil(n*RS_NEED[k]):0);return r;}
+const RS_CAP=40;   // 소비는 영토 40곳 분량에서 멈춘다(거대 제국도 한 턴 소비 밀가루 16·고기 10·향신료 6이 최대)
+function rsNeed(pid){const n=Math.min(RS_CAP,landN(pid)),r={};Object.keys(RS_NEED).forEach(k=>r[k]=n?Math.ceil(n*RS_NEED[k]):0);return r;}
 function rsProd(pid,real){const r={wood:0,flour:0,meat:0,spice:0};const bx=1+pfx(pid,'bfx');owned(pid).forEach(t=>{if(t.sea)return;const fo=TDEF[t.id].terrain==='forest';r.wood+=real?((fo||(t.id+G.round)%2===0)?1:0):(fo?1:0.5);(t.bl||[]).forEach(b=>{const x=RS_PROD[b];if(x&&!(t.unrest>0))r[x[0]]+=Math.round(x[1]*bx);});});r.wood=Math.round(r.wood);return r;}
 function rsInit(){G.players.forEach(p=>{if(!p.alive||p.rs0||!landN(p.id))return;p.rs0=1;p.stock=p.stock||{};Object.keys(p.stock).forEach(g=>{if(!GOODS[g])delete p.stock[g];});const nd=rsNeed(p.id);p.stock.wood=Math.max(p.stock.wood||0,20);Object.keys(nd).forEach(k=>{p.stock[k]=Math.max(p.stock[k]||0,Math.min(STK,nd[k]*6+4));});});}
 function rsTick(){G.players.forEach(p=>{if(!p.alive)return;p.stock=p.stock||{};Object.keys(p.stock).forEach(g=>{if(!GOODS[g])delete p.stock[g];});if(p.fin)Object.keys(p.fin).forEach(g=>{if(!GOODS[g])delete p.fin[g];});
@@ -789,7 +790,7 @@ function defFormula(td,T){const k=KIND[td.kind];return CFG.defBase+TERRAIN[td.te
 function fortMorale(T){const L=(T.fort||0)+(T.trench||0);return L<=0?0:Math.min(30,10+5*(L-1));}
 function defBonus(T,original){const td=TDEF[T.id],k=KIND[td.kind];const terr=TERRAIN[td.terrain].d+(k.defb||0);
   return original?defFormula(td,T):terr*0.5;}
-function armyMorale(pid,gen){if(pid==null)return 55;const p=G.players[pid];return clamp(p.morale*polMor(p)+(gen?4*gen.lead+(gen.trait==='charisma'?5:0):0),25,100);}   // 전투에 나설 때 사기는 최소 25
+function armyMorale(pid,gen){if(pid==null)return 55;const p=G.players[pid];return clamp(p.morale*polMor(p)+(gen?6*gen.lead+(gen.trait==='charisma'?5:0):0),25,100);}   // 전투에 나설 때 사기는 최소 25
 function underdog(pid){if(G.round<2)return false;const vps=G.players.filter(p=>p.alive).map(p=>p.vp);return G.players[pid].vp===Math.min(...vps)&&Math.max(...vps)>G.players[pid].vp;}
 /* 지역별 징집 한도: 한 지역에서 한 턴에 징집할 수 있는 최대 병력. 지역 병력 상한의 60%이고, 도시를 업그레이드할 때마다 +50% (최대 3단계) */
 const CITY_MAX=3,CITY_COST=[120,240,400];
@@ -1006,7 +1007,7 @@ function setOrders(pid,m){if(G.phase!=='plan')return fail('계획 단계가 아�
 
 /* ================= 전투 ================= */
 /* 장군 능력 1점당 효과(GEN_K)와, 거느린 병력이 많을수록 커지는 배율: 1,000명 ≈ ×0.9 · 5,000명 ≈ ×1.18 · 1만 ≈ ×1.4 · 2만 ≈ ×1.71 · 3.5만 이상 ×1.9 */
-const GEN_K=0.09;const genScale=n=>clamp(0.65+0.75*Math.sqrt(Math.max(0,n)/10000),0.65,1.9);
+const GEN_K=0.14;const genScale=n=>clamp(0.65+0.75*Math.sqrt(Math.max(0,n)/10000),0.65,1.9);
 function simulateBattle(A,D){
   const F=[0.14,0.26,0.22,0.12];let a=A.troops,d=D.troops;const a0=a,d0=d;
   const tA=A.gen?A.gen.trait:null,tD=D.gen?D.gen.trait:null;
