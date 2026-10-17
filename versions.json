@@ -2,18 +2,18 @@
  "name": "Crown Envoy",
  "latest": "0.2",
  "latestFile": "CrownEnvoy-v0.2.html",
- "updated": "2026-10-16",
+ "updated": "2026-10-17",
  "versions": [
   {
    "version": "0.2",
-   "date": "2026-10-16",
+   "date": "2026-10-17",
    "file": "CrownEnvoy-v0.2.html",
    "title": "상황별 튜토리얼과 로그인",
    "summary": "상황별 튜토리얼, Frenchfries777 계정 로그인·친구·도전과제·랭킹, 정치체제·종교·여론, 자원 4종(목재·고기·밀가루·향신료)과 생산 건물, 1턴 뒤 합류하는 징집, 사기 내역, 턴 보고서, 왕위 계승·공동 전쟁, 시나리오 편집기 이벤트와 공유, 구불구불한 지역 경계",
    "latest": true,
-   "size": 4082665,
-   "sha256": "763539437831",
-   "build": "b19"
+   "size": 4082830,
+   "sha256": "4617cb03d520",
+   "build": "b20"
   },
   {
    "version": "0.1",
