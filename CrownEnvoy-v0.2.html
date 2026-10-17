@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b20</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.2 · b21</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -711,7 +711,6 @@ const CULT={
  mon:['부얀','엥케','바트','투멘','다얀','알탄','투무르','볼로드','엘베그','에센','마하','아루그'],
  alb:['스칸데르','아흐메트','이스마일','에삿','바시','제코','푸아드','아스트리트','아르벤','바르딜','크리스트','레디'],
  ara:['아흐메드','무함마드','하산','유세프','칼리드','오마르','이브라힘','후세인','압델','리다','나세르','사이드']};
-const NAME_POOL=['카일','미라','도란','엘레나','바르칸','소피아','하켄','리디아','제논','유리','마르쿠스','아이린','볼가','나디아','테오','실비아'];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const ri=(a,b)=>Math.floor(rnd(a,b+1));
@@ -756,14 +755,12 @@ function rsTick(){G.players.forEach(p=>{if(!p.alive)return;p.stock=p.stock||{};O
 /* 바닥난 자원 하나가 한 턴 이어질 때마다 반란 확률 +1% (최대 30%) */
 const shortRev=p=>Math.min(0.3,0.01*Object.values(p.shortT||{}).reduce((a,b)=>a+b,0));
 const priceOf=g=>Math.max(1,Math.round(PRICE[g]*((G.pm&&G.pm[g])||1)));
-const goodOf=id=>{const t=TDEF[id];return (!t||t.sea)?null:'wood';};
 let _gcache={G:null,key:'',m:{}};
 const ownGoods=pid=>{const own=new Set();owned(pid).forEach(t=>{if(t.sea)return;own.add('wood');(t.bl||[]).forEach(b=>{const x=RS_PROD[b];if(x)own.add(x[0]);});});return own;};
 function goodsOf(pid){const key=G.round+'|'+G.phase+'|'+(G.deals||[]).length+'|'+((G.emb||[]).length)+'|'+(G.gv||0);if(_gcache.G!==G||_gcache.key!==key)_gcache={G,key,m:{}};let r=_gcache.m[pid];if(r)return r;
   const own=ownGoods(pid),imp=new Set();
   (G.deals||[]).forEach(d=>{if(d.until<G.round)return;let other=null,g=null;if(d.a===pid&&d.gb){other=d.b;g=d.gb;}else if(d.b===pid&&d.ga){other=d.a;g=d.ga;}if(!g||own.has(g))return;const q=G.players[other];if(!q||!q.alive||isHostile(pid,other)||isEmb(pid,other))return;if(ownGoods(other).has(g))imp.add(g);});
   return (_gcache.m[pid]={own,imp});}
-const goodHas=(pid,g)=>{const r=goodsOf(pid);return r.own.has(g)||r.imp.has(g);};
 /* 항구가 있는 나라끼리 무역 협정·동맹을 맺으면 무역로가 열려 수입이 는다(항구 쌍마다 +12, 최대 3쌍). 관세를 높이면 내 몫이 늘고 상대 몫이 준다. 금수 중이면 끊긴다 */
 function routeGold(pid){const mp=openPorts(pid);if(!mp)return 0;const P=G.players[pid];let g=0;const seen=new Set();G.treaties.forEach(t=>{if((t.type!=='trade'&&t.type!=='alliance')||(t.a!==pid&&t.b!==pid))return;const o=t.a===pid?t.b:t.a;if(seen.has(o))return;seen.add(o);const q=G.players[o];if(!q||!q.alive||isHostile(pid,o)||isEmb(pid,o))return;
   g+=Math.min(mp,openPorts(o),3)*12*(1+0.25*((P.tariff&&P.tariff[o])||0))*(fairOn(pid)?1:(1-0.25*((q.tariff&&q.tariff[pid])||0)));});return Math.round(g);}
@@ -886,7 +883,6 @@ function newGame(defs,plan){if(typeof Host!=='undefined')Host.snaps=[];
 const fail=m=>({ok:false,msg:m});const ok=m=>({ok:true,msg:m});
 /* 동맹에게 병력·금화 보내기 (병력은 내 큰 지역에서 일부를 떼어 상대 수도로 간다) */
 function takeTroopsU(pid,n,dst0){let need=n,got=0;owned(pid).sort((a,b)=>b.troops-a.troops).forEach(t=>{if(need<=0)return;const take=Math.min(need,Math.floor(t.troops*0.6));if(take<=0)return;const u=takeUnits(t,null,splitUnits(compOf(t),take));const g=sumU(u);if(g<=0)return;need-=g;got+=g;addUnits(dst0,dst0.owner,u);});return got;}
-function takeTroops(pid,n){let need=n;owned(pid).sort((a,b)=>b.troops-a.troops).forEach(t=>{if(need<=0)return;const take=Math.min(need,Math.floor(t.troops*0.6));t.troops-=take;need-=take;});return n-need;}
 function giveAid(from,to,what,n){const p=G.players[from],q=G.players[to];
   if(what==='gold'){if(n>p.gold)return fail(`금화가 부족합니다 (보유 ${Math.floor(p.gold)})`);p.gold-=n;q.gold+=n;opnAdd(to,from,'aid','지원을 받았다',Math.min(16,Math.max(3,Math.round(n/25))),16);log(`${pname(from)}이(가) 동맹 ${pname(to)}에게 금화 ${n}을(를) 보냈다.`,'dip');hooks.toast(to,`${pname(from)}이(가) 금화 ${n}을(를) 보냈습니다.`);return ok(`금화 ${n}을(를) 보냈습니다.`);}
   const dst=(G.terr[q.cap]&&G.terr[q.cap].owner===to)?G.terr[q.cap]:(owned(to)[0]||null);if(!dst)return fail('받을 영토가 없습니다.');if(!dst)return fail('받을 영토가 없습니다.');
@@ -2068,7 +2064,6 @@ function goalsTick(){G.players.forEach(p=>{if(!p.goals||!p.goals.length)return;p
 
 /* ---------- 속국과 조공 ---------- */
 const overlordOf=pid=>{const t=G.treaties.find(x=>x.type==='vassal'&&x.b===pid);return t?t.a:null;};
-const vassalsOf=pid=>G.treaties.filter(x=>x.type==='vassal'&&x.a===pid).map(x=>x.b);
 function makeVassal(over,vas){if(over===vas||overlordOf(vas)!=null||overlordOf(over)===vas)return false;
   G.treaties=G.treaties.filter(t=>!((t.a===over&&t.b===vas)||(t.a===vas&&t.b===over)));delete G.hostile[hostKey(over,vas)];
   G.treaties.push({id:G.uid++,type:'vassal',a:over,b:vas,until:G.round+1e6,secret:false});
@@ -2085,7 +2080,6 @@ function parseTerms(t){if(!t||!t.k||t.k==='status')return null;const dir=t.dir==
   if(t.k==='vassal')return {k:'vassal',dir,n:0};
   if(t.k==='limit')return {k:'limit',dir,n:(+t.n===80?80:100)};
   return null;}
-const TERM_LABEL={gold:'배상금',cede:'영토 할양',return:'점령지 반환',vassal:'속국화',limit:'병력 제한'};
 function termText(T,fromName,toName){if(!T)return '조건 없음 (현재 상태 그대로 휴전)';
   const who=T.dir==='ask'?[fromName,toName]:[toName,fromName];   // [받는 쪽, 내는 쪽]
   if(T.k==='peace')return `${who[1]}이(가) ${who[0]}에게 ${T.ids.length?'영토('+T.ids.map(i=>TDEF[i].name).join(', ')+')':''}${T.ids.length&&T.tk?' + ':''}${T.tk?'배상금 '+Math.round(T.tk*TOKGOLD)+'금':''} (토큰 ${peaceCost2(T)}개)${T.pow?' · 포로 교환':''}${T.vs?' · '+who[1]+'이(가) 속국이 됨':''}${T.wr>=0?' · '+who[1]+'이(가) '+((((typeof G!=='undefined'&&G&&G.players)||(typeof C!=='undefined'&&C.view&&C.view.players)||[])[T.wr]||{kingdom:'?'}).kingdom.split('(')[0])+'에 선전포고':''}`;
@@ -2638,7 +2632,6 @@ const convAvail=(pid,t)=>G.tplId?tierAvail(pid,t):3;
 function initTiers(p){p.ut={i:tierAvail(p.id,'i'),c:tierAvail(p.id,'c'),a:tierAvail(p.id,'a')};}
 function countUnits(pid,t){let n=0;G.terr.forEach(T=>{if(T.sea)return;if(T.owner===pid)n+=compOf(T)[t];else if(T.gst&&T.gst[pid]>0)n+=compOf(T,pid)[t];});return n;}
 const upgCost=(pid,t,k)=>Math.max(30,Math.ceil(countUnits(pid,t)*UPG_UNIT[k]*UT_COST[t]));
-function tierBonus(pid,mix,def){if(pid==null)return 0;const c=mix.c||0,a=mix.a||0,i=Math.max(0,1-c-a);const T=def?TIER_DEF:TIER_ATK;return i*T.i[utier(pid,'i')]+c*T.c[utier(pid,'c')]+a*T.a[utier(pid,'a')];}
 function upgView(pid){const o={};UT.forEach(t=>{const cur=utier(pid,t),nx=cur+1;const need=nx<=3?UT_UNLOCK[t][nx]:null;o[t]={tier:cur,name:UT_TIER[t][cur],next:nx<=3?UT_TIER[t][nx]:null,need:need,needName:need?techName(need):null,cost:nx<=3?upgCost(pid,t,nx):0,units:countUnits(pid,t),ready:nx<=3&&need&&techHas(pid,need)};});return o;}
 function extUpgrade(pid,ty){const p=G.players[pid];if(!UT.includes(ty))return fail('병종 오류');const cur=utier(pid,ty),nx=cur+1;if(nx>3)return fail('이미 최고 단계예요.');
   const need=UT_UNLOCK[ty][nx];if(!techHas(pid,need))return fail(`먼저 '${techName(need)}' 기술을 연구해야 해요.`);const cost=upgCost(pid,ty,nx);if(p.gold<cost)return fail(`금화가 부족합니다 (필요 ${cost})`);
@@ -3179,7 +3172,6 @@ const $=(s,el=document)=>el.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const lerp=(a,b,t)=>a+(b-a)*t;
-function hash2(a,b){let h=2166136261;for(const n of [a,b]){h^=Math.round(n*10);h=Math.imul(h,16777619);}return h>>>0;}
 function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function inPoly(x,y,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 const ICON={
@@ -5809,7 +5801,6 @@ const starStr=n=>'★'.repeat(n)+'☆'.repeat(3-n);
 window.ceStarsOf=id=>{const n=stars[TKs(id)]||0;return n?`<span class="tplstars" title="최고 기록">${starStr(n)}</span>`:'';};
 function starsFor(v){const o=v.over;const rk=o.ranking||[];const i=rk.findIndex(r=>r.id===v.me);if(i<0)return null;const r=rk[i];const won=(o.winners||[o.winner]).includes(v.me);
   const ob=r.obj||[],dn=ob.filter(x=>x.done).length;let n=0;if(r.alive)n=1;if(r.alive&&(ob.length?dn*2>=ob.length:i<3))n=2;if(won||(ob.length&&dn===ob.length))n=3;return n;}
-let starSync=null;
 async function syncStars(push){try{const u=window.CEAuth&&CEAuth.user();if(!u)return;const sb=await CEAuth.sb();const r=await sb.auth.getUser();const md=(r&&r.data&&r.data.user&&r.data.user.user_metadata)||{};const rem=md.ce_stars||{};let ch=false;
   Object.keys(rem).forEach(k=>{if((rem[k]||0)>(stars[k]||0)){stars[k]=rem[k];ch=true;}});if(ch)saveStars();
   const need=Object.keys(stars).some(k=>(stars[k]||0)>(rem[k]||0));if(need||push)await sb.auth.updateUser({data:{ce_stars:stars}});}catch(e){}}
