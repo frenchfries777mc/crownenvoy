@@ -261,6 +261,7 @@ input[type=checkbox]{accent-color:var(--gold)}
 .ednat input[type=color]{width:26px;height:26px;padding:0;border:0;background:none;flex:none}.ednat input.nm{flex:1;min-width:0}.ednat .cnt{font-size:12px;color:#9fb3d4;flex:none;width:34px;text-align:right}
 .ednat .btn{padding:2px 7px}
 .edtools{display:flex;gap:6px;flex-wrap:wrap}.edtools .btn.on{background:#7a5a22;border-color:#ffd45e;color:#fff}
+#cuOv{position:fixed;inset:0;background:#000b;z-index:99970;display:flex;align-items:center;justify-content:center;padding:14px}#cuOv .ab{background:#0e182b;border:1px solid #c9a24a;border-radius:12px;padding:16px;width:min(94vw,520px);max-height:86vh;overflow:auto;color:#eef1f7}#cuOv h2{margin:0;font-size:19px}#cuOv .ah{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#cuOv .x{background:none;border:0;color:#9fb0c8;font-size:16px;cursor:pointer}#cuOv .mu{color:#c3cede;font-size:13px;margin:6px 0}#cuOv .dgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}#cuOv .dg{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;border-radius:8px;background:#13213a;border:1.5px solid #2a3a58;text-align:center;font-size:13px}#cuOv .dg.y{border-color:#4f9a62}#cuOv .dg.n{border-color:#b04a3a}#cuOv .dg .fl{width:40px;height:40px;border-width:2px}#cuOv .dg small{color:#9fb0c8}#cuOv .row2{display:flex;gap:10px;margin-top:6px}#cuOv .row2 .btn{flex:1;padding:10px}
 #shOv{position:fixed;inset:0;background:#000b;z-index:99980;display:flex;align-items:center;justify-content:center;padding:14px}#shOv .ab{background:#0e182b;border:1px solid #c9a24a;border-radius:12px;padding:16px;width:min(94vw,520px);max-height:86vh;overflow:auto;color:#eef1f7}#shOv h2{margin:0;font-size:19px}#shOv .ah{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#shOv .x{background:none;border:0;color:#9fb0c8;font-size:16px;cursor:pointer}#shOv .mu{color:#9fb0c8;font-size:12px;margin:6px 0}#shOv .sr{padding:8px 10px;border-radius:8px;background:#13213a;margin:6px 0}#shOv .sr .t{font-weight:700}#shOv .sr .d{color:#c3cede;font-size:12.5px;margin:3px 0}#shOv .sr .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#shOv .sr .row small{color:#9fb0c8;flex:1;min-width:120px}#shOv .tb{display:flex;gap:6px;margin:6px 0}#shOv .tb .on{border-color:#c9a24a;color:#ffe08a}
 .edrel{display:flex;gap:8px;align-items:center;margin:4px 0;font-size:13px}.edrel span{flex:1}.edrel select{width:96px;flex:none}
 .edacts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -362,7 +363,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 29</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 30</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -1343,25 +1344,32 @@ const AGENDA={embargo:{n:'금수 제재',ic:'🚫',d:'참석국이 함께 한 �
 const pwScore=pid=>landN(pid)*30+totalTroops(pid)*0.3+Math.max(0,income(pid))*1.5;
 const pwRel=pid=>{const m=Math.max(1,...G.players.filter(q=>q.alive&&!q.landless).map(q=>pwScore(q.id)));return clamp(pwScore(pid)/m,0,1);};
 const opnSum=(a,b)=>((G.opn||{})[a+'>'+b]||[]).reduce((s,x)=>s+(x.until>=G.round?x.v:0),0);
-function attendChance(pid,host){let c=0.12+0.65*pwRel(host)+clamp(opnSum(pid,host),-40,40)/200;if(isHostile(pid,host))c-=0.4;if(treatyBetween(pid,host,'alliance'))c+=0.2;else if(treatyBetween(pid,host,'trade')||treatyBetween(pid,host,'nap'))c+=0.08;return clamp(c,0.03,0.95);}
+function attendChance(pid,host){let c=0.4+0.5*pwRel(host)+clamp(opnSum(pid,host),-40,40)/200;if(isHostile(pid,host))c-=0.25;if(treatyBetween(pid,host,'alliance'))c+=0.15;else if(treatyBetween(pid,host,'trade')||treatyBetween(pid,host,'nap'))c+=0.08;return clamp(c,0.2,0.97);}
+function councilVote(i,c){const h=c.host;let y=0.5+clamp(opnSum(i,h),-40,40)/120+(treatyBetween(i,h,'alliance')?0.2:0)-(isHostile(i,h)?0.3:0);
+  if(c.type==='embargo'){const t=c.tgt;if(treatyBetween(i,t,'alliance'))y-=0.5;else if(isHostile(i,t))y+=0.3;else{y-=clamp(opnSum(i,t)/120,-0.2,0.25);if(treatyBetween(i,t,'trade'))y-=0.2;}}
+  else if(c.type==='truce'){const war=G.players.some(q=>q.alive&&q.id!==i&&(c.inv.includes(q.id)||q.id===h)&&isHostile(i,q.id));y+=war?(pwRel(i)<0.5?0.3:-0.15):0.2;}
+  else y+=0.3;
+  return Math.random()<clamp(y,0.1,0.95);}
 function councilOpen(pid,m){const p=G.players[pid];if(G.phase!=='plan')return fail('계획 단계에서만 가능합니다.');if(G.council)return fail('이미 회의가 열려 있어요. 이번 턴이 끝나면 결과가 나와요.');if((p.councilCd||0)>G.round)return fail(`회의는 ${(p.councilCd||0)-G.round}턴 뒤에 다시 소집할 수 있어요.`);if(p.landless)return fail('영토가 있어야 소집할 수 있어요.');
   const ag=AGENDA[m.type];if(!ag)return fail('안건 오류');if(p.gold<COUNCIL_COST)return fail(`금화가 부족합니다 (필요 ${COUNCIL_COST})`);let tgt=null;
   if(m.type==='embargo'){tgt=+m.tgt;const T=G.players[tgt];if(!T||!T.alive||tgt===pid)return fail('제재할 나라를 고르세요.');}
   const inv=G.players.filter(q=>q.alive&&!q.landless&&q.id!==pid&&q.id!==tgt).map(q=>q.id);if(inv.length<2)return fail('초대할 나라가 부족해요.');
-  p.gold-=COUNCIL_COST;p.councilCd=G.round+COUNCIL_CD;const c=G.council={id:G.uid++,host:pid,type:m.type,tgt,round:G.round,inv,att:[pid],no:[]};
-  inv.forEach(i=>{const q=G.players[i];if(q.isBot){if(Math.random()<attendChance(i,pid))c.att.push(i);else c.no.push(i);}else{G.props.push({id:G.uid++,type:'council',from:pid,to:i,cid:c.id,agenda:m.type,tgt,round:G.round});hooks.toast(i,`${snm(pid)}이(가) 세계 회의(${ag.n})를 소집했어요. 참석할지 정하세요.`);}});
+  p.gold-=COUNCIL_COST;p.councilCd=G.round+COUNCIL_CD;const c=G.council={id:G.uid++,host:pid,type:m.type,tgt,round:G.round,inv,att:[pid],no:[],votes:{[pid]:true}};
+  inv.forEach(i=>{const q=G.players[i];if(q.isBot){if(Math.random()<attendChance(i,pid)){c.att.push(i);c.votes[i]=councilVote(i,c);}else c.no.push(i);}else{G.props.push({id:G.uid++,type:'council',from:pid,to:i,cid:c.id,agenda:m.type,tgt,round:G.round});hooks.toast(i,`${snm(pid)}이(가) 세계 회의(${ag.n})를 소집했어요. 참석할지 정하세요.`);}});
   log(`${pname(pid)}이(가) 세계 회의를 소집했다. 안건: ${ag.n}${tgt!=null?' ('+snm(tgt)+')':''}`,'dip');wlog('ally',pid,tgt,`${snm(pid)}이(가) 세계 회의를 소집했다 (${ag.n})`);
-  return ok(`🏛 세계 회의를 소집했어요 (${ag.n}). 이번 턴이 끝날 때 참석한 나라들로 결과가 나와요. (-${COUNCIL_COST}금)`);}
-function councilRespond(pid,pr,accept){const c=G.council;if(!c||c.id!==pr.cid)return fail('이미 끝난 회의예요.');if(!accept){c.no.push(pid);return ok('회의에 불참하기로 했어요.');}c.att.push(pid);return ok('회의에 참석하기로 했어요.');}
+  return ok(`🏛 세계 회의를 소집했어요 (${ag.n}). 새 창에서 대표들의 표결을 볼 수 있고, 이번 턴이 끝날 때 결과가 나와요. (-${COUNCIL_COST}금)`);}
+function councilRespond(pid,pr,accept){const c=G.council;if(!c||c.id!==pr.cid)return fail('이미 끝난 회의예요.');if(c.votes[pid]!=null)return fail('이미 정했어요.');c.att.push(pid);c.votes[pid]=!!accept;return ok(accept?'찬성표를 던졌어요.':'반대표를 던졌어요.');}
 function councilTick(){const c=G.council;if(!c)return;G.council=null;G.props=G.props.filter(x=>!(x.type==='council'&&x.cid===c.id));
-  const h=G.players[c.host],ag=AGENDA[c.type];if(!h)return;const att=c.att.filter(i=>G.players[i]&&G.players[i].alive);const quorum=Math.max(3,Math.ceil((c.inv.length+1)*0.4));
-  c.inv.forEach(i=>{if(att.includes(i))opnAdd(c.host,i,'council','회의에 참석해 주었다',4,12);else opnAdd(c.host,i,'council_no','회의에 불참했다',-2,8);});
+  const h=G.players[c.host],ag=AGENDA[c.type];if(!h)return;const att=c.att.filter(i=>G.players[i]&&G.players[i].alive);const quorum=Math.max(3,Math.ceil((c.inv.length+1)*0.3));
+  const yes=att.filter(i=>c.votes[i]===true),no=att.filter(i=>c.votes[i]===false);
+  c.inv.forEach(i=>{if(att.includes(i))opnAdd(c.host,i,'council','회의에 참석해 주었다',3,12);else opnAdd(c.host,i,'council_no','회의에 불참했다',-2,8);});
   if(att.length<quorum){log(`${pname(c.host)}의 세계 회의(${ag.n})는 참석국이 ${att.length}곳뿐이라 무산됐다.`,'dip');wlog('ally',c.host,null,`${snm(c.host)}의 세계 회의가 무산됐다 (참석 ${att.length}곳)`);return;}
+  if(yes.length<=no.length){log(`세계 회의(${ag.n})가 찬성 ${yes.length} · 반대 ${no.length}로 부결됐다.`,'dip');wlog('ally',c.host,null,`${snm(c.host)}의 세계 회의 안건이 부결됐다 (찬성 ${yes.length} · 반대 ${no.length})`);att.forEach(a=>hooks.toast(a,`세계 회의 결과: 부결 (찬성 ${yes.length} · 반대 ${no.length})`));return;}
   const names=att.map(snm).join(', ');
-  if(c.type==='embargo'&&c.tgt!=null&&G.players[c.tgt]&&G.players[c.tgt].alive){G.emb=G.emb||[];const t=c.tgt;att.forEach(a=>{if(a===t||G.emb.some(x=>x.from===a&&x.to===t&&x.until>=G.round)||G.emb.filter(x=>x.from===a&&x.until>=G.round).length>=2)return;G.emb.push({from:a,to:t,until:G.round+6});opnAdd(t,a,'emb','회의의 금수 제재에 동참했다',-12,14);});log(`세계 회의(${names})가 ${pname(t)}에 대한 금수 제재를 결의했다.`,'dip');hooks.toast(t,`세계 회의가 우리에게 금수 제재를 결의했어요.`);}
+  if(c.type==='embargo'&&c.tgt!=null&&G.players[c.tgt]&&G.players[c.tgt].alive){G.emb=G.emb||[];const t=c.tgt;yes.forEach(a=>{if(a===t||G.emb.some(x=>x.from===a&&x.to===t&&x.until>=G.round)||G.emb.filter(x=>x.from===a&&x.until>=G.round).length>=2)return;G.emb.push({from:a,to:t,until:G.round+6});opnAdd(t,a,'emb','회의의 금수 제재에 동참했다',-12,14);});log(`세계 회의(찬성 ${yes.length} · 반대 ${no.length})가 ${pname(t)}에 대한 금수 제재를 가결했다. 찬성국이 6턴 동안 금수에 나선다.`,'dip');hooks.toast(t,`세계 회의가 우리에게 금수 제재를 가결했어요.`);}
   else if(c.type==='truce'){let n=0;for(let x=0;x<att.length;x++)for(let y=x+1;y<att.length;y++)if(isHostile(att[x],att[y])){makeTruce(att[x],att[y],null);n++;}log(n?`세계 회의(${names})의 권고로 ${n}쌍의 전쟁이 휴전에 들어갔다.`:`세계 회의(${names})가 평화를 권고했지만 참석국끼리 전쟁 중인 곳이 없었다.`,'dip');}
   else if(c.type==='amity'){att.forEach(a=>{G.players[a].gold+=25;att.forEach(b=>{if(a!==b)opnAdd(a,b,'council_f','세계 회의에서 뜻을 모았다',8,15);});});log(`세계 회의(${names})가 우호를 선언했다. 참석국에 금화 25씩.`,'dip');}
-  h.vp=(h.vp||0)+3;wlog('ally',c.host,null,`${snm(c.host)}의 세계 회의 성사 (${ag.n}, 참석 ${att.length}곳)`);att.forEach(a=>hooks.toast(a,`세계 회의 결과: ${ag.n} 성사 (참석 ${att.length}곳)`));}
+  h.vp=(h.vp||0)+3;wlog('ally',c.host,null,`${snm(c.host)}의 세계 회의 가결 (${ag.n}, 찬성 ${yes.length} · 반대 ${no.length})`);att.forEach(a=>hooks.toast(a,`세계 회의 결과: ${ag.n} 가결 (찬성 ${yes.length} · 반대 ${no.length})`));}
 function councilBot(pid){const p=G.players[pid];if(!p.alive||p.landless||G.council||G.round<4||(p.councilCd||0)>G.round||p.gold<COUNCIL_COST+80)return;if(Math.random()>0.05+0.08*pwRel(pid))return;
   const al=G.players.filter(q=>q.alive&&!q.landless&&q.id!==pid);if(al.length<3)return;const big=al.slice().sort((a,b)=>pwScore(b.id)-pwScore(a.id))[0];
   const wars=[];for(let x=0;x<al.length;x++)for(let y=x+1;y<al.length;y++)if(isHostile(al[x].id,al[y].id))wars.push(1);
@@ -2526,6 +2534,7 @@ function extAct(pid,m){const p=G.players[pid];const inPlan=G.phase==='plan';if(m
     if((T.bl||[]).length>=bslots(T))return fail('건물 칸이 가득 찼어요. 도시를 키우면 칸이 늘어요.');if(b.port&&!isPort(T.id))return fail('항구 영토에만 지을 수 있어요.');if(p.gold<b.cost)return fail(`금화가 부족합니다 (필요 ${b.cost})`);p.stock=p.stock||{};const wd=b.w||0;if((p.stock.wood||0)<wd)return fail(`목재가 부족합니다 (필요 ${wd})`);
     p.gold-=b.cost;p.stock.wood-=wd;T.bl=(T.bl||[]).concat([m.b]);T.blO=pid;T.mark={k:'build',t:b.n,until:G.round+2};log(`${p.kingdom}이(가) ${TDEF[T.id].name}에 ${b.n}을(를) 지었다.`,'sys');return ok(`${TDEF[T.id].name}에 ${b.ic} ${b.n}을(를) 지었습니다. (-${b.cost}금)`);}
   case 'council':return councilOpen(pid,m);
+  case 'cvote':{const c=G.council;if(!c||!c.inv.includes(pid))return fail('참석할 수 있는 회의가 없어요.');if(c.votes[pid]!=null)return fail('이미 정했어요.');G.props=G.props.filter(x=>!(x.type==='council'&&x.cid===c.id&&x.to===pid));c.att.push(pid);c.votes[pid]=!!m.v;return ok(m.v?'찬성표를 던졌어요.':'반대표를 던졌어요.');}
   case 'expedition':return expAct(pid,m);
   case 'form':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');if(!FORMS[m.f])return fail('대형 오류');p.form=m.f;return ok(`전투 대형: ${FORMS[m.f].ic} ${FORMS[m.f].n}`);}
   case 'wonder':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');const T=G.terr[+m.tid];const w=WONDERS[m.k];if(!T||T.sea||T.owner!==pid||!w)return fail('내 도시를 선택하세요.');if(!((T.city||0)>=1))return fail('도시 1단계 이상인 영토에만 지을 수 있어요.');if(T.wd||T.wp)return fail('이 영토에는 이미 불가사의가 있어요.');if(wdTaken(m.k))return fail('그 불가사의는 세상에 하나뿐이고 이미 누군가 지었어요.');if(wdBusy(pid)>=WMAX)return fail(`불가사의는 나라마다 ${WMAX}개까지예요.`);
@@ -3047,7 +3056,7 @@ function makeView(pid,opts){const omni=!!(opts&&opts.omni);const DPT=cedeGeo();
     terr:G.terr.map(t=>{const full=t.owner==null||sees(t.owner);const o={id:t.id,plg:t.plg||0,burn:(t.burn||0)>=G.round?1:0,port:(!t.sea&&isPort(t.id))?(blockaded(t.id,t.owner==null?-1:t.owner)&&t.owner!=null?2:1):0,owner:t.owner,fort:t.fort,trench:t.trench||0,oos:t.oos?1:0,siege:t.siege||0,unrest:t.unrest,dp:DPT.dp[t.id],cd:DPT.cd[t.id],tier:tierOf(t.troops)};if(t.mark&&t.mark.until>=G.round)o.mk={k:t.mark.k,t:t.mark.t};if(t.post)o.post=t.post.by;if(t.wd)o.wd=t.wd;if(t.wp)o.wp={k:t.wp.k,left:t.wp.left};if(full){if(t.bl)o.bl=t.bl.slice();if(!t.sea&&t.owner!=null)o.pop=Math.round(popIdx(t)*100)/100;o.troops=t.troops;if(t.troops>0){const cu=compOf(t);o.u=[cu.i,cu.c,cu.a];if(t.owner!=null){const vf=vfOf(t),r2=x=>Math.round(x*100)/100;o.uv=[vf.i.map(r2),vf.c.map(r2),vf.a.map(r2)];const ow=t.owner!=null?G.players[t.owner]:null;if(ow){let xl=0;['i','c','a'].forEach(k=>{const j=vf[k].indexOf(Math.max(...vf[k]));xl=Math.max(xl,xlv(ow,k,j));});o.xl=xl;}}}}if(t.inf&&!t.sea){let tk=-1,tv=0;Object.keys(t.inf).forEach(k=>{if(t.inf[k]>tv){tv=t.inf[k];tk=+k;}});const mm=t.inf[pid]||0;if(t.owner===pid&&tv>0)o.inf={m:0,k:tk,tv};else if(mm>0)o.inf={m:mm,k:pid,tv:mm};}if(t.gst&&t.gst[pid]>0){o.mygst=t.gst[pid];{const gu=compOf(t,pid);o.gu=[gu.i,gu.c,gu.a];}}if(t.owner===pid&&!t.sea){if(t.mc&&t.mc.length){o.mcn=t.mc.reduce((q,x)=>q+x.n,0);o.mcl=Math.max(...t.mc.map(x=>x.until))-G.round+1;}o.city=t.city||0;o.mkt=t.mkt||0;o.mcost=(isPort(t.id)&&(t.mkt||0)<2)?MKT_COST[t.mkt||0]:0;o.ccap=conscriptCap(t);o.dr=t.drafted||0;if(t.pend)o.pend=t.pend.reduce((q,x)=>q+x.n,0);o.ccost=(t.city||0)<CITY_MAX?cityCostOf(pid,t.city||0):0;}if(t.owner===pid&&t.gst){const sg=Object.keys(t.gst).reduce((a,k)=>a+(t.gst[k]||0),0);if(sg>0)o.allyg=sg;}return o;}),
     gens:G.gens.filter(g=>g.status!=='dead').map(g=>{const full=g.owner===pid||sees(g.owner)||g.captor===pid;const o={id:g.id,owner:g.owner,name:g.name,xp:g.xp||0,grade:gradeOf(g),loc:g.loc,status:g.status,captor:g.captor};if(full){o.atk=g.atk;o.def=g.def;o.lead=g.lead;o.trait=g.trait;}return o;}),
     relics:Object.assign({},G.relics||{}),
-    council:G.council?{host:G.council.host,type:G.council.type,tgt:G.council.tgt,inv:G.council.inv.length,att:G.council.att.length,mine:G.council.att.includes(pid)?1:G.council.no.includes(pid)?-1:0}:null,cd:(G.players[pid]&&G.players[pid].councilCd)||0,
+    council:G.council?{id:G.council.id,host:G.council.host,type:G.council.type,tgt:G.council.tgt,inv:G.council.inv.slice(),att:G.council.att.slice(),votes:Object.assign({},G.council.votes),mine:G.council.votes[pid]===true?1:G.council.votes[pid]===false?0:-1}:null,cd:(G.players[pid]&&G.players[pid].councilCd)||0,
     guar:(G.guar||[]).filter(x=>x.until>=G.round&&(omni||x.from===pid||x.to===pid||true)).map(x=>({...x})),emb:(G.emb||[]).filter(x=>x.until>=G.round&&(omni||x.from===pid||x.to===pid)).map(x=>({...x})),
     dips:G.dips.map(d=>({...d})),treaties:G.treaties.filter(t=>omni||!t.secret||t.a===pid||t.b===pid).map(t=>({...t})),props:omni?[]:G.props.filter(x=>x.from===pid||x.to===pid).map(x=>({...x})),
     log:G.log.slice(-200),wl:(G.warlog||[]).slice(-300),spec:omni,eliminated:!me.alive,pol:omni?null:G.pol[pid],marr:(G.marr||[]).filter(x=>x.until>=G.round&&(omni||x.a===pid||x.b===pid)),canUndo:!omni&&Host.canUndo(),hasLast:!omni&&!!(G.lastOrders[pid]&&G.lastOrders[pid].length),orders:omni?null:(G.orders[pid]||null),report:G.phase==='report'?G.report:null,
@@ -4485,6 +4494,7 @@ const UI={
     h+=`<div class="sm muted" style="margin-top:8px">모두 고르면 남은 땅에 AI 왕국이 자리 잡고 전쟁이 시작됩니다.</div>`;return h;},
   /* ----- 뷰 수신 ----- */
   handleView(v){
+    try{UI.councilWin(v);}catch(e){console.error('councilWin',e);}
     if(v.spec)C.spec=true;if(v.spec&&v.me!=null)C.me=v.me;
     C.endAt=Date.now()+v.remain;
     C.draft=null;
@@ -4695,9 +4705,22 @@ const UI={
       <div class="pol"><div><b>방어 태세</b><small>위협이 있는 지역으로 병력 이동 명령을 미리 채워 줘요. 직접 고치거나 지울 수 있어요.</small></div>${seg('garrison',['끔','수도·위협','국경 균형'])}</div>
       <div class="pol"><div><b>조약 자동 수락</b><small>신뢰도 50 이상인 상대의 제안만 받아요.</small></div>${seg('treaty',['끔','불가침','모두'])}</div>
       <div class="sm muted" style="margin-top:8px">방침은 다음 계획 단계부터 적용됩니다.</div></div></details>`;},
+  councilWin(v){
+    let o=document.getElementById('cuOv');const c=v&&v.council;
+    if(!c||v.spec||v.draft||v.me==null||(!c.inv.includes(v.me)&&c.host!==v.me)||C.cuClosed===c.id){if(o)o.remove();return;}
+    if(!o){o=document.createElement('div');o.id='cuOv';document.body.appendChild(o);}
+    const ag=AGENDA[c.type],P=i=>v.players[i],nm=i=>esc(P(i).kingdom.split('(')[0]),need=c.inv.includes(v.me)&&c.mine===-1;
+    const del=c.att.map(i=>{const p=P(i),vt=c.votes[i];return `<div class="dg ${vt===true?'y':vt===false?'n':''}">${fl(p)}<b>${nm(i)}</b><small>${i===c.host?'소집국 · ':''}${vt===true?'✅ 찬성':vt===false?'❌ 반대':'…'}</small></div>`;}).join('');
+    const wait=c.inv.filter(i=>!c.att.includes(i)).length;
+    o.innerHTML=`<div class="ab"><div class="ah"><h2>🏛 세계 회의</h2><button class="x" data-cu="close" aria-label="닫기">✕</button></div>
+      <div class="mu"><b>${ag.ic} ${ag.n}</b>${c.tgt!=null&&P(c.tgt)?` → ${nm(c.tgt)}`:''} · ${esc(ag.d)}</div>
+      <div class="mu">소집 ${nm(c.host)} · 대표 ${c.att.length}곳 참석 · 아직 안 온 나라 ${wait}곳</div>
+      <div class="dgs">${del}</div>
+      ${need?`<div class="mu" style="margin-top:8px">우리 대표는 어떻게 할까요? 정하지 않으면 불참이에요.</div><div class="row2"><button class="btn primary" data-cu="y">찬성</button><button class="btn" data-cu="n">반대</button></div>`:`<div class="mu" style="margin-top:8px">${c.mine===1?'우리는 찬성했어요. ':c.mine===0?'우리는 반대했어요. ':''}이번 턴이 끝나면 찬성이 반대보다 많을 때 가결돼요.</div>`}</div>`;
+    o.querySelectorAll('[data-cu]').forEach(b=>b.onclick=()=>{const k=b.dataset.cu;if(k==='close'){C.cuClosed=c.id;o.remove();}else send({a:'cvote',v:k==='y'?1:0});});},
   councilHTML(){
     const v=C.view,me=mePl();if(!me||v.spec)return '';const c=v.council,plan=v.phase==='plan';let h=`<h3>🏛 세계 회의</h3><div class="card sm">`;
-    if(c){const ag=AGENDA[c.type];h+=`<div><b>${ag.ic} ${ag.n}</b>${c.tgt!=null&&v.players[c.tgt]?` → ${esc(v.players[c.tgt].kingdom.split('(')[0])}`:''} <span class="muted">· 소집 ${esc(v.players[c.host].kingdom.split('(')[0])} · 지금까지 참석 ${c.att}곳 / 초대 ${c.inv}곳</span></div><div class="muted" style="margin-top:4px">${c.mine===1?'나는 참석해요.':c.mine===-1?'나는 불참해요.':'이번 턴이 끝날 때 결과가 나와요.'}</div>`;}
+    if(c){const ag=AGENDA[c.type];h+=`<div><b>${ag.ic} ${ag.n}</b>${c.tgt!=null&&v.players[c.tgt]?` → ${esc(v.players[c.tgt].kingdom.split('(')[0])}`:''} <span class="muted">· 소집 ${esc(v.players[c.host].kingdom.split('(')[0])} · 참석 ${c.att.length}곳 / 초대 ${c.inv.length}곳</span></div><div class="row" style="margin-top:4px"><span class="muted">이번 턴이 끝날 때 표결 결과가 나와요.</span><button class="btn sm primary" data-act="cuopen">회의장 열기</button></div>`;}
     else{const wait=(v.cd||0)-v.round;const ops=v.players.filter(p=>p.id!==v.me&&p.alive&&!p.landless);
       h+=`<div class="muted">누구나 회의를 소집할 수 있어요. 초대받은 나라는 참석 여부를 정하고, <b>소집한 나라가 강할수록 더 많이 와요</b>. 참석국이 충분하면 안건이 시행돼요. (${COUNCIL_COST}금, ${COUNCIL_CD}턴에 한 번)</div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px"><select id="cuType">${Object.keys(AGENDA).map(k=>`<option value="${k}">${AGENDA[k].ic} ${AGENDA[k].n}</option>`).join('')}</select><select id="cuTgt" title="금수 제재 대상">${ops.map(p=>`<option value="${p.id}">${esc(p.kingdom.split('(')[0])}</option>`).join('')}</select><button class="btn sm primary" data-act="council" ${plan&&wait<=0&&me.gold>=COUNCIL_COST?'':'disabled'}>소집하기${wait>0?' ('+wait+'턴 뒤)':''}</button></div><div class="muted" style="margin-top:4px">${Object.keys(AGENDA).map(k=>AGENDA[k].ic+' '+AGENDA[k].d).join(' · ')}</div>`;}
     return h+`</div>`;},
@@ -4905,6 +4928,8 @@ const UI={
       case 'mkt':send({a:'mkt',op:d.op,good:d.good,n:+d.n});break;
       case 'autosell':send({a:'autosell',lv:+d.lv});break;
       case 'bld':send({a:'bld',tid:+d.tid,b:d.b});break;
+      case 'cuopen':C.cuClosed=null;UI.councilWin(C.view);break;
+      case 'cvote':send({a:'cvote',v:+d.v});break;
       case 'council':{const ty=document.getElementById('cuType'),tg=document.getElementById('cuTgt');if(ty)send({a:'council',type:ty.value,tgt:tg?+tg.value:null});break;}
       case 'expedition':send({a:'expedition',route:d.route});break;
       case 'form':send({a:'form',f:d.f});break;
@@ -5042,7 +5067,7 @@ Object.assign(UI,{
     else if(pr.type==='loan'){desc=`<b style="color:var(--gold2)">대출</b> <span>${fn}이(가) ${fmt(pr.amt)}금을 빌려주겠다고 해요. 6턴 동안 총 ${fmt(pr.owed)}금을 갚아야 하고, 못 갚으면 신뢰와 안정도를 잃어요.</span>`;okTxt='빌린다';}
     else if(pr.type==='swap'){const g=k=>k?GOODS[k].ic+' '+GOODS[k].n:'없음';desc=`<b style="color:var(--gold2)">상품 교환</b> <span>${fn}이(가) ${g(pr.give)}을(를) 주고 ${g(pr.get)}을(를) 받겠다고 해요.</span>${pr.gold?(pr.gold>0?` <span>매턴 금화 ${fn}이(가) ${fmt(pr.gold)}을(를) 내요.</span>`:` <span>매턴 금화 우리가 ${fmt(-pr.gold)}을(를) 내요.</span>`):''} <span>(${SWAP_TURNS}턴) 서로 받은 상품의 효과를 누려요.</span>`;}
     else if(pr.type==='join'){const E=v.players[pr.enemy];const en=E?esc(E.kingdom.split('(')[0]):'상대';desc=pr.guar?`<b>우리가 독립을 보장한 나라</b>예요. ${fn}이(가) ${en}의 공격을 받고 있어요. 약속대로 함께 ${en}에 선전포고하고 도울까요? <b style="color:#ff9a86">외면하면 신뢰도 −5, 그 나라의 호감을 크게 잃어요</b>`:`동맹 ${fn}이(가) ${en}과(와) 전쟁 중이에요. 함께 ${en}에 선전포고하고 참전할까요? <b style="color:#ff9a86">거절하면 신뢰도 −10</b>`;okTxt='참전';tone='war';}
-    else if(pr.type==='council'){const ag=AGENDA[pr.agenda]||{n:'',d:''};desc=`<b style="color:var(--gold2)">🏛 세계 회의</b> — ${fn}이(가) 회의를 소집했어요. 안건: <b>${ag.ic||''} ${ag.n}</b>${pr.tgt!=null&&v.players[pr.tgt]?` (대상 ${esc(v.players[pr.tgt].kingdom.split('(')[0])})`:''}. ${ag.d}. 참석 여부는 이번 턴이 끝날 때까지 정하세요.`;okTxt='참석';noTxt='불참';}
+    else if(pr.type==='council'){const ag=AGENDA[pr.agenda]||{n:'',d:''};desc=`<b style="color:var(--gold2)">🏛 세계 회의</b> — ${fn}이(가) 회의를 소집했어요. 안건: <b>${ag.ic||''} ${ag.n}</b>${pr.tgt!=null&&v.players[pr.tgt]?` (대상 ${esc(v.players[pr.tgt].kingdom.split('(')[0])})`:''}. ${ag.d}. 새 창에서 대표들을 보고 찬성·반대를 정하세요. 정하지 않으면 불참이에요.`;okTxt='찬성';noTxt='반대';}
     else if(pr.type==='cowar'){const E=v.players[pr.enemy];const en=E?esc(E.kingdom.split('(')[0]):'상대';desc=`<b style="color:#ffb27a">공동 전쟁</b> — 동맹 ${fn}이(가) ${en}에 맞서 함께 싸우자고 해요. 수락하면 ${en}에 선전포고하고, ${en}의 영토를 점령할 때마다 두 나라가 15금씩 전리품을 받아요. 혼자 휴전하면 신뢰도 −20.`;okTxt='함께 싸운다';tone='war';}
     else if(pr.type==='truce')desc='휴전 — 수락하면 전쟁이 멈추고 12턴 동안 서로 공격하지 않아요. (AI는 그 기간에 먼저 선전포고하지 않아요) 깨고 다시 선전포고하면 신뢰도가 크게 깎여요.'+(pr.terms?` <b style="color:var(--gold2)">조건: ${esc(termText(pr.terms,fn,'우리'))}</b>`:' (조건 없음)');
     else if(pr.type==='demand'){const nm=(pr.ids||[]).map(i=>esc(TDEF[i].name)).join(', ');const what=[pr.gold?`금화 <b>${fmt(pr.gold)}</b>`:'',nm?`영토 <b>${nm}</b>`:''].filter(Boolean).join('과(와) ');desc=`<b style="color:#ffb27a">최후통첩</b> — ${what}을(를) 내놓으라고 요구해요. 거절하면 관계가 나빠지고 전쟁으로 번질 수 있어요.`;okTxt=`굴복 (${[(pr.ids||[]).length?'영토 '+pr.ids.length+'곳':'',pr.gold?'−'+fmt(pr.gold)+'금':''].filter(Boolean).join(', ')})`;noTxt='거절';tone='war';}
