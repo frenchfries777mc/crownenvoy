@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · b24</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · b25</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -1004,14 +1004,21 @@ function setOrders(pid,m){if(G.phase!=='plan')return fail('계획 단계가 아�
 /* ================= 전투 ================= */
 /* 장군 능력 1점당 효과(GEN_K)와, 거느린 병력이 많을수록 커지는 배율: 1,000명 ≈ ×0.9 · 5,000명 ≈ ×1.18 · 1만 ≈ ×1.4 · 2만 ≈ ×1.71 · 3.5만 이상 ×1.9 */
 const GEN_K=0.14;const genScale=n=>clamp(0.65+0.75*Math.sqrt(Math.max(0,n)/10000),0.65,1.9);
+/* ===== 전투 대형: 방진 > 쐐기 > 횡대 > 방진, 우위 효과는 지휘관 통솔에 비례 ===== */
+const FORMS={square:{n:'방진',ic:'🛡️',beats:'wedge',d:'촘촘히 뭉쳐 쐐기 돌파를 막아내요'},wedge:{n:'쐐기',ic:'🔺',beats:'line',d:'한 점을 찔러 얇은 횡대를 가르고 들어가요'},line:{n:'횡대',ic:'↔️',beats:'square',d:'넓게 펼쳐 화력으로 뭉친 방진을 깎아요'}};
+const formOf=pid=>{const p=pid!=null&&G.players[pid];return p&&FORMS[p.form]?p.form:'line';};
+const formWin=(a,b)=>!!(a&&b&&a!==b&&FORMS[a]&&FORMS[a].beats===b);
+function formEdge(A,D){if(!A.form||!D.form||A.form===D.form)return [0,0,null];const bo=s=>0.015+0.006*(s.gen?s.gen.lead||0:0);
+  if(formWin(A.form,D.form)){const b=bo(A);return [b,-b*0.5,'att'];}if(formWin(D.form,A.form)){const b=bo(D);return [-b*0.5,b,'def'];}return [0,0,null];}
 function simulateBattle(A,D){
+  const fe=formEdge(A,D);
   const F=[0.14,0.26,0.22,0.12];let a=A.troops,d=D.troops;const a0=a,d0=d;
   const tA=A.gen?A.gen.trait:null,tD=D.gen?D.gen.trait:null;
   let mA=clamp(Math.max(25,A.morale+(tA==='inspire'?8:0)-(tD==='spy'?8:0)),25,100),mD=clamp(Math.max(25,D.morale+(D.mbonus||0)+(tD==='inspire'?8:0)-(tA==='spy'?8:0)),25,100);const mA0=mA,mD0=mD;const minDead=0.33*(a0+d0);   // 양측 합계의 33%가 전사하기 전에는 결판이 나지 않는다   // 전투에 나설 때 사기는 최소 25
   const thr=s=>s.gen&&s.gen.trait==='charisma'?12:22;const phases=[];let loser=null;
   const dm=(t,i)=>(t==='artillery'&&i<=1?1.35:1)*(t==='cavalry'&&i===2?1.5:1)*(t==='blitz'?1.2:1);
   const tAt=A.pid!=null?techAtk(A.pid)+((A.sea||D.sea)&&techHas(A.pid,'steam')?0.08:0):0,tDf=D.pid!=null?techDef(D.pid)+((A.sea||D.sea)&&techHas(D.pid,'steam')?0.08:0):0;
-  const mods=()=>[clamp(tAt+(A.gen?GEN_K*A.gen.atk*genScale(a0):0)+(tA==='maneuver'?0.12:0)+(A.abonus||0)+Math.min(0.3,(A.vet||0)/300)+(mA-60)*0.001,-0.4,1.3),clamp(tDf+D.bonus*(tD==='entrench'?1.25:1)+(D.gen?GEN_K*D.gen.def*genScale(d0):0)+Math.min(0.3,(D.vet||0)/300)+(mD-60)*0.001,-0.4,3.0)];
+  const mods=()=>[clamp(tAt+(A.gen?GEN_K*A.gen.atk*genScale(a0):0)+(tA==='maneuver'?0.12:0)+(A.abonus||0)+Math.min(0.3,(A.vet||0)/300)+(mA-60)*0.001+fe[0],-0.4,1.3),clamp(tDf+D.bonus*(tD==='entrench'?1.25:1)+(D.gen?GEN_K*D.gen.def*genScale(d0):0)+Math.min(0.3,(D.vet||0)/300)+(mD-60)*0.001+fe[1],-0.4,3.0)];
   for(let i=0;i<4;i++){
     const [modA,modD]=mods();const Pa=a*(1+modA),Pd=d*(1+modD);
     let dealtD=F[i]*Pa*rnd(0.9,1.1)*dm(tA,i),dealtA=F[i]*Pd*rnd(0.9,1.1)*dm(tD,i);let note='';
@@ -1026,7 +1033,7 @@ function simulateBattle(A,D){
   const winner=loser==='att'?'def':'att';const wGen=winner==='att'?A.gen:D.gen;
   let ls=loser==='att'?a:d;const need=Math.max(0,Math.round(minDead-((a0-a)+(d0-d))));const pl=Math.min(ls,Math.max(Math.round(ls*(0.15+(wGen&&wGen.trait==='pursuer'?0.15:0))),need));ls-=pl;
   let aS=loser==='att'?ls:a,dS=loser==='def'?ls:d;if(winner==='att')aS=Math.max(1,aS);else dS=Math.max(1,dS);
-  return {phases,winner,loser,aSurv:aS,dSurv:dS,pursuit:pl,aStart:a0,dStart:d0,mStart:[Math.round(mA0),Math.round(mD0)],bonus:D.bonus};
+  return {phases,winner,loser,aSurv:aS,dSurv:dS,pursuit:pl,aStart:a0,dStart:d0,mStart:[Math.round(mA0),Math.round(mD0)],bonus:D.bonus,fm:A.form&&D.form?{a:A.form,d:D.form,w:fe[2]}:null};
 }
 /* 장군 명성: 전투에서 이기면 경험이 쌓이고(열세에서 이기면 더 많이), 5점마다 가장 약한 능력이 1 오른다(최대 7) */
 const MEDAL=['동성','은성','금성','백금성','대훈장'];
@@ -1159,7 +1166,9 @@ function resolveRound(){
       const SE=SEA_ERA[TK(G.tplId)]||SEA_ERA.def;const seaA=!!(a.srcs&&a.srcs.length&&a.srcs.every(s=>G.terr[s.from].sea));const pin=(a.srcs&&a.srcs.length>1)?Math.min(0.3,0.12*(a.srcs.length-1)):0;const A={pid:a.pid,troops:a.n,morale:armyMorale(a.pid,aGen),gen:aGen,sea:!!T.sea,vet:G.players[a.pid].vet||0,abonus:(T.sea?(((G.players[a.pid].navy||1)-1)*0.5):(seaA?-SE.land:0))+(T.sea?0:seasonAtk(T))+pin};
       const D={pid:holder.pid,troops:holder.troops,morale:armyMorale(holder.pid,dGen),gen:dGen,sea:!!T.sea,amb:!T.sea&&['forest','mountain'].includes(TDEF[T.id].terrain),vet:holder.pid!=null?(G.players[holder.pid].vet||0):0,bonus:T.sea?(holder.pid!=null?(((G.players[holder.pid].navy||1)-1)*0.5):0):defBonus(T,holder.original),mbonus:T.sea?0:(holder.original?fortMorale(T):0)};
       {xpGain(a.pid,a.mix);if(holder.pid!=null)xpGain(holder.pid,holder.mix||mixOfT(T));const cb=compBattle(a.mix,holder.mix||mixOfT(T),T,a.pid,holder.pid);A.abonus+=cb.atk;if(!T.sea)D.bonus+=cb.def;}
+      if(!T.sea&&holder.pid!=null){A.form=formOf(a.pid);D.form=formOf(holder.pid);}
       const r=simulateBattle(A,D);
+      if(r.fm){const pa=G.players[a.pid],pd=G.players[holder.pid];(pa.seenF=pa.seenF||{})[holder.pid]=r.fm.d;(pd.seenF=pd.seenF||{})[a.pid]=r.fm.a;if(r.fm.w)log(`${TDEF[tid].name} 전투: ${pname(a.pid)} ${FORMS[r.fm.a].ic}${FORMS[r.fm.a].n} vs ${pname(holder.pid)} ${FORMS[r.fm.d].ic}${FORMS[r.fm.d].n} — ${pname(r.fm.w==='att'?a.pid:holder.pid)} 쪽이 대형 우위`,'war');}
       {const lA=r.aStart-r.aSurv,lD=r.dStart-r.dSurv;if(G.wounded){const wa=Math.round(lA*(techHas(a.pid,'med')?0.45:0.3)),wd=Math.round(lD*((holder.pid!=null&&techHas(holder.pid,'med'))?0.45:0.3));if(wa>0)G.wounded.push({pid:a.pid,tid:(a.srcs&&a.srcs[0])?a.srcs[0].from:G.players[a.pid].cap,n:wa,due:G.round+2});if(wd>0&&holder.pid!=null)G.wounded.push({pid:holder.pid,tid,n:wd,due:G.round+2});}
        [[a.pid,lA/(r.aStart||1),r.winner==='att'],[holder.pid,lD/(r.dStart||1),r.winner==='def']].forEach(([pp,fr,w])=>{if(pp==null)return;const q=G.players[pp];const gn=Math.max(0,Math.min(0.8+Math.min(2.5,fr*6)+(w?0.8:0),4-(q.vg||0)));q.vg=(q.vg||0)+gn;q.vet=Math.min(100,(q.vet||0)+gn);});}
       const rec={tid,att:a.pid,def:holder.pid,aGen:aGen&&aGen.id,dGen:dGen&&dGen.id,aStart:r.aStart,dStart:r.dStart,phases:r.phases,winner:r.winner,aSurv:r.aSurv,dSurv:r.dSurv,pursuit:r.pursuit,mStart:r.mStart,bonus:r.bonus,pin:pin,sea:T.sea?1:0,mb:D.mbonus||0,gp:holder.gpids||null,trench:holder.original?(T.trench||0):0,captured:r.winner==='att',fates:[],aU:{c:(a.mix&&a.mix.c)||0,i:utier(a.pid,'i'),k:utier(a.pid,'c')},dU:{c:((holder.mix||mixOfT(T)).c)||0,i:holder.pid!=null?utier(holder.pid,'i'):0,k:holder.pid!=null?utier(holder.pid,'c'):0}};
@@ -1315,6 +1324,9 @@ function wdList(pid){if(!WDC||WDC.g!==G||WDC.r!==G.round){WDC={g:G,r:G.round,m:{
 const wdTaken=k=>G.terr.some(t=>t.wd===k||(t.wp&&t.wp.k===k));
 const wdBusy=pid=>wdList(pid).length+G.terr.filter(t=>t.wp&&t.owner===pid).length;
 function wdTick(){G.terr.forEach(t=>{if(!t.wp)return;if(t.owner==null||t.wp.by!==t.owner){delete t.wp;return;}if(--t.wp.left>0)return;const k=t.wp.k,p=G.players[t.owner];t.wd=k;delete t.wp;p.vp=(p.vp||0)+5;t.mark={k:'build',t:WONDERS[k].n,until:G.round+3};log(`${p.kingdom}이(가) ${TDEF[t.id].name}에 ${WONDERS[k].n}을(를) 완공했다!`,'sys');});WDC=null;}
+function formBot(pid){const p=G.players[pid];if(!p.alive||p.landless)return;const seen=p.seenF||{};const foes=Object.keys(seen).filter(o=>G.players[o]&&G.players[o].alive&&isHostile(pid,+o));
+  if(foes.length&&Math.random()<0.6){const o=pick(foes),beatIt=Object.keys(FORMS).find(k=>FORMS[k].beats===seen[o]);if(beatIt){p.form=beatIt;return;}}
+  if(!p.form||Math.random()<0.5)p.form=pick(Object.keys(FORMS));}
 function wdBot(pid){const p=G.players[pid];if(!p.alive||p.landless||p.gold<WCOST+300||wdBusy(pid)>=WMAX)return;const L=owned(pid).filter(t=>!t.sea&&(t.city||0)>=1&&!t.wd&&!t.wp);const K=Object.keys(WONDERS).filter(k=>!wdTaken(k));if(!L.length||!K.length)return;
   if(((p.stock||{}).wood||0)<WWOOD){extAct(pid,{a:'mkt',op:'buy',good:'wood',n:WWOOD});return;}extAct(pid,{a:'wonder',tid:pick(L).id,k:pick(K)});}
 function bldSync(){G.terr.forEach(t=>{if(t.sea)return;
@@ -2430,7 +2442,7 @@ function scenEvTick(){(G.pendNews||[]).forEach(n=>{(G.turnEvents=G.turnEvents||[
   if(!head)return;if(e.txt&&e.k!=='news'){body=head;head=String(e.txt).slice(0,80);}
   log(head,'event');(G.turnEvents=G.turnEvents||[]).push({r:G.round,date:ymOf(G.round),head,body,scene:({war:'declaration',peace:'treaty',ally:'treaty',revolt:'revolution'})[e.k]||'meeting',ca:A?A.color:'#c9a24a',cb:B?B.color:(A?A.color:'#c9a24a'),pids:[A&&A.id,B&&B.id].filter(x=>x!=null)});});}
 /* ---------- AI의 확장 행동 ---------- */
-function extBot(pid){const p=G.players[pid];if(!p.alive||p.landless)return;try{botTrade(pid);}catch(e){console.error('botTrade',e);}try{bldBot(pid);}catch(e){console.error('bldBot',e);}if(Math.random()<0.12)try{wdBot(pid);}catch(e){console.error('wdBot',e);}
+function extBot(pid){const p=G.players[pid];if(!p.alive||p.landless)return;try{botTrade(pid);}catch(e){console.error('botTrade',e);}try{bldBot(pid);}catch(e){console.error('bldBot',e);}try{formBot(pid);}catch(e){console.error('formBot',e);}if(Math.random()<0.12)try{wdBot(pid);}catch(e){console.error('wdBot',e);}
   if(p.gold>380&&Math.random()<0.1){const foes=G.players.filter(q=>q.alive&&q.id!==pid&&isHostile(pid,q.id));if(foes.length){const q=pick(foes),k=pick(Object.keys(SPY));if(p.gold>SPY[k].cost+250)extAct(pid,{a:'spy',kind:k,to:q.id});}}
   if((!G.tplId||G.tplId==='age')&&p.gold>260&&Math.random()<0.45){const tg=colTargets(pid);const ids=Object.keys(tg).sort((a,b)=>tg[a]-tg[b]);if(ids.length&&p.gold>tg[ids[0]]+150)extAct(pid,{a:'colonize',tid:+ids[0]});}
   const ov=overlordOf(pid);if(ov!=null&&warBalance(pid,ov)>0.35&&Math.random()<0.12)extAct(pid,{a:'vassal',op:'revolt',to:ov});}
@@ -2454,6 +2466,7 @@ function extAct(pid,m){const p=G.players[pid];const inPlan=G.phase==='plan';if(m
   case 'bld':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');const T=G.terr[+m.tid];const b=BLD[m.b];if(!T||T.sea||T.owner!==pid||!b)return fail('내 영토를 선택하세요.');if(hasB(T,m.b))return fail('이미 지은 건물이에요.');
     if((T.bl||[]).length>=bslots(T))return fail('건물 칸이 가득 찼어요. 도시를 키우면 칸이 늘어요.');if(b.port&&!isPort(T.id))return fail('항구 영토에만 지을 수 있어요.');if(p.gold<b.cost)return fail(`금화가 부족합니다 (필요 ${b.cost})`);p.stock=p.stock||{};const wd=b.w||0;if((p.stock.wood||0)<wd)return fail(`목재가 부족합니다 (필요 ${wd})`);
     p.gold-=b.cost;p.stock.wood-=wd;T.bl=(T.bl||[]).concat([m.b]);T.blO=pid;T.mark={k:'build',t:b.n,until:G.round+2};log(`${p.kingdom}이(가) ${TDEF[T.id].name}에 ${b.n}을(를) 지었다.`,'sys');return ok(`${TDEF[T.id].name}에 ${b.ic} ${b.n}을(를) 지었습니다. (-${b.cost}금)`);}
+  case 'form':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');if(!FORMS[m.f])return fail('대형 오류');p.form=m.f;return ok(`전투 대형: ${FORMS[m.f].ic} ${FORMS[m.f].n}`);}
   case 'wonder':{if(!inPlan)return fail('계획 단계에서만 가능합니다.');const T=G.terr[+m.tid];const w=WONDERS[m.k];if(!T||T.sea||T.owner!==pid||!w)return fail('내 도시를 선택하세요.');if(!((T.city||0)>=1))return fail('도시 1단계 이상인 영토에만 지을 수 있어요.');if(T.wd||T.wp)return fail('이 영토에는 이미 불가사의가 있어요.');if(wdTaken(m.k))return fail('그 불가사의는 세상에 하나뿐이고 이미 누군가 지었어요.');if(wdBusy(pid)>=WMAX)return fail(`불가사의는 나라마다 ${WMAX}개까지예요.`);
     if(p.gold<WCOST)return fail(`금화가 부족합니다 (필요 ${WCOST})`);p.stock=p.stock||{};if((p.stock.wood||0)<WWOOD)return fail(`목재가 부족합니다 (필요 ${WWOOD})`);
     p.gold-=WCOST;p.stock.wood-=WWOOD;T.wp={k:m.k,left:WTURNS,by:pid};WDC=null;log(`${p.kingdom}이(가) ${TDEF[T.id].name}에서 ${w.n} 건설을 시작했다.`,'sys');return ok(`${TDEF[T.id].name}에서 ${w.ic} ${w.n} 건설을 시작했습니다. ${WTURNS}턴 뒤 완성돼요. (-${WCOST}금)`);}
@@ -2966,7 +2979,7 @@ function makeView(pid,opts){const omni=!!(opts&&opts.omni);const DPT=cedeGeo();
       const o={id:p.id,name:p.name,kingdom:p.kingdom,color:p.color,isBot:p.isBot,flag:p.flag||null,vet:Math.round(p.vet||0),wounded:(G.wounded||[]).filter(w=>w.pid===p.id).reduce((s,w)=>s+w.n,0),alive:p.alive,eth:ethOf(p),foes:G.players.filter(y=>y.alive&&y.id!==p.id&&isHostile(p.id,y.id)).map(y=>y.id),persona:(p.persona&&PERSONA[p.persona])?PERSONA[p.persona].n:null,...(p.id!==pid?(()=>{const ch=hasChannel(pid,p.id);const r=ch?opnOf(p.id,pid):null;const m2=ch?opnOf(pid,p.id):null;return {ch,near:touching(pid,p.id),rel:r?{t:r.total,l:r.label,items:r.items.slice().sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,9)}:null,rel2:m2?m2.total:null};})():{}),vp:p.vp,perf:Math.round(p.vp/Math.max(1,(p.baseVP||10)*Math.max(1,G.round))*100),oc:(p.obj&&p.obj.length)?[p.obj.filter(x=>x.done).length,p.obj.length]:null,hostile:p.id!==pid&&isHostile(pid,p.id),trust:Math.round(p.trust),ready:p.ready,terrs:owned(p.id).length,cap:p.cap,tier:tierOf(totalTroops(p.id)),moraleTier:p.morale>=70?'높음':p.morale>=45?'보통':'낮음',scouted:p.id!==pid&&me.scouts[p.id]===G.round,ally:p.id!==pid&&allied(p.id),diplo:p.id!==pid&&dipIn(p.id),landless:!!p.landless,over:overlordOf(p.id)};
       polEnsure(p);o.gov=p.gov;o.fai=p.fai;
       if(eco){o.gold=Math.round(p.gold);o.stab=Math.round(p.stab);o.fat=Math.round(p.fat);o.pub=Math.round(pubOf(p));}
-      o.gown=[...ownGoods(p.id)];if(p.id===pid||(G.players[pid]&&G.players[pid].peek&&G.players[pid].peek[p.id]>=G.round)||dipIn(p.id)||allied(p.id)||omni||G.treaties.some(x=>(x.type==='trade'||x.type==='alliance')&&((x.a===pid&&x.b===p.id)||(x.b===pid&&x.a===p.id))))o.gstock=Object.assign({},p.stock||{});
+      o.gown=[...ownGoods(p.id)];if(p.id===pid||omni)o.form=formOf(p.id);if(p.id===pid||(G.players[pid]&&G.players[pid].peek&&G.players[pid].peek[p.id]>=G.round)||dipIn(p.id)||allied(p.id)||omni||G.treaties.some(x=>(x.type==='trade'||x.type==='alliance')&&((x.a===pid&&x.b===p.id)||(x.b===pid&&x.a===p.id))))o.gstock=Object.assign({},p.stock||{});
       if(full){o.troops=totalTroops(p.id);o.morale=Math.round(clamp(p.morale*polMor(p),0,100));}
       if(p.id===pid){o.fin=Object.assign({},p.fin||{});o.rs={need:rsNeed(pid),prod:rsProd(pid),short:Object.assign({},p.short||{}),rev:Math.round(shortRev(p)*100)};o.mor=morView(p);o.pendN=pendOf(pid);o.cvmax=convMax(pid);o.ut=[utier(pid,'i'),utier(pid,'c'),utier(pid,'a')];o.tav=[convAvail(pid,'i'),convAvail(pid,'c'),convAvail(pid,'a')];o.obj=objView(p);o.fcost=fortCostOf(pid);o.tcost=trenchCostOf(pid);o.scost=scoutCostOf(pid);o.goals=(p.goals||[]).map(g=>({k:g.k,enemy:g.enemy,prog:g.prog,done:g.done,need:GOALS[g.k].need,n:GOALS[g.k].n}));o.ww=Math.round(p.ww||0);o.tariff=Object.assign({},p.tariff||{});o.autoSell=p.autoSell||0;o.tbk={route:routeGold(pid),market:marketGold(pid),imp:importGold(pid)};o.deals=(G.deals||[]).filter(d=>d.until>=G.round&&(d.a===pid||d.b===pid)).map(d=>{const mineA=d.a===pid;return {id:d.id,w:mineA?d.b:d.a,give:mineA?d.ga:d.gb,get:mineA?d.gb:d.ga,gold:mineA?d.gold:-d.gold,left:d.until-G.round};});o.convoys=(G.convoys||[]).filter(c=>c.owner===pid).map(c=>({to:c.to,left:Math.max(0,c.due-G.round),v:c.value}));{const gg=goodsOf(pid);o.goods={own:[...gg.own],imp:[...gg.imp]};o.tin=tradeIncome(pid);}o.income=income(pid);o.upkeep=upkeep(pid);o.capacity=capacity(pid);o.under=underdog(pid);o.pol=polView(pid);}
       return o;}),
@@ -4324,8 +4337,10 @@ const UI={
   renderKinds(m,host){
     const tpl=!!m.tpl;$('#kindSeg').querySelectorAll('button').forEach(b=>{b.classList.toggle('on',(b.dataset.kind==='tpl')===tpl);b.disabled=!host;b.onclick=()=>{if(!host)return;if(b.dataset.kind==='tpl')Net.send({t:'tpl',id:m.tpl||TEMPLATES[TEMPLATES.length-3].id});else Net.send({t:'map',id:m.map||0});};});
     $('#mapBox').classList.toggle('hidden',tpl);$('#tplBox').classList.toggle('hidden',!tpl);const rt=document.getElementById('lobbyRight');if(rt)rt.classList.toggle('wide',!!tpl);UI.renderLen(m,host,tpl);
-    $('#tplList').innerHTML=TEMPLATES.slice().sort((p,q)=>(p.year||0)-(q.year||0)).map(t=>`<button class="tplcard ${m.tpl===t.id?'on':''}" data-tpl="${t.id}" ${host?'':'disabled'}><b class="y">${t.label||t.year}</b><span>${esc(t.name)}${window.ceStarsOf?ceStarsOf(t.id):''}</span><em>${t.nations.length}개 나라 · 동맹 ${t.al.length>60?'다수':t.al.length}쌍 · 적대 ${t.war.length}쌍</em></button>`).join('');
+    const tyr=t=>t.custom?(t.year?(t.year<0?(-t.year)+' BC':String(t.year)):'내 시나리오'):(t.label||t.year);
+    $('#tplList').innerHTML=TEMPLATES.slice().sort((p,q)=>((p.custom&&!p.year)?9999:(p.year||0))-((q.custom&&!q.year)?9999:(q.year||0))).map(t=>`<button class="tplcard ${m.tpl===t.id?'on':''}" data-tpl="${t.id}" ${host?'':'disabled'}><b class="y">${tyr(t)}</b><span>${esc(t.name)}${window.ceStarsOf?ceStarsOf(t.id):''}${t.custom&&host?`<i class="tpldel" data-tpldel="${esc(t.id)}" role="button" title="이 시나리오 삭제" style="float:right;cursor:pointer;color:#ff8a7a;font-style:normal;padding:0 4px">🗑</i>`:''}</span><em>${t.nations.length}개 나라 · 동맹 ${t.al.length>60?'다수':t.al.length}쌍 · 적대 ${t.war.length}쌍</em></button>`).join('');
     $('#tplList').querySelectorAll('button[data-tpl]').forEach(b=>b.onclick=()=>Net.send({t:'tpl',id:b.dataset.tpl}));
+    $('#tplList').querySelectorAll('[data-tpldel]').forEach(x=>x.onclick=e=>{e.stopPropagation();const id=x.dataset.tpldel,t=TEMPLATES.find(q=>q.id===id);if(!t)return;UI.ask(`"${t.name}" 시나리오를 내 목록에서 삭제할까요?`,()=>{Ed.saveAll(Ed.loadAll().filter(q=>q.id!==id));const k=TEMPLATES.findIndex(q=>q.id===id&&q.custom);if(k>=0)TEMPLATES.splice(k,1);if(Ed.st&&Ed.st.id===id)Ed.st.id=null;Net.send({t:'tpl',id:m.tpl===id?TEMPLATES[0].id:m.tpl});},{yes:'삭제'});});
     const cur=TEMPLATES.find(t=>t.id===m.tpl);$('#tplDesc').textContent=cur?cur.desc+' 지휘관마다 플레이할 나라를 하나씩 고르고, 나머지 나라는 AI가 맡아요.':'';$('#tplInfo').innerHTML=cur?UI.tplInfoHTML(cur,false):'';
     if(tpl)$('#mapHelp').textContent=host?'시대를 눌러 고르세요.':'방장이 시대를 고릅니다.';},
   renderMaps(sel,host,tpl){
@@ -4527,7 +4542,7 @@ const UI={
     if(v.phase==='report')h+=UI.reportHTML();
     if(v.phase==='plan')h+=UI.ordersHTML();
     if(C.sel!=null)h+=UI.terrHTML();
-    h+=UI.polHTML()+UI.genHTML()+UI.rivalHTML();return h;},
+    h+=UI.polHTML()+UI.formHTML()+UI.genHTML()+UI.rivalHTML();return h;},
   ordersHTML(){
     const v=C.view;const used={};C.orders.forEach(o=>used[o.from]=(used[o.from]||0)+o.n);const genUsed=new Set(C.orders.map(o=>o.gid).filter(Boolean));
     let h=`<h3>병력 명령 <span class="muted sm">${C.orders.length?C.orders.length+'건':''}</span></h3>`;
@@ -4602,6 +4617,11 @@ const UI={
       <div class="pol"><div><b>방어 태세</b><small>위협이 있는 지역으로 병력 이동 명령을 미리 채워 줘요. 직접 고치거나 지울 수 있어요.</small></div>${seg('garrison',['끔','수도·위협','국경 균형'])}</div>
       <div class="pol"><div><b>조약 자동 수락</b><small>신뢰도 50 이상인 상대의 제안만 받아요.</small></div>${seg('treaty',['끔','불가침','모두'])}</div>
       <div class="sm muted" style="margin-top:8px">방침은 다음 계획 단계부터 적용됩니다.</div></div></details>`;},
+  formHTML(){
+    const v=C.view,me=mePl();if(!me||v.spec)return '';const cur=me.form||'line',can=v.phase==='plan';
+    return `<details class="acc" data-acc="form" ${C.acc.form?'open':''}><summary>전투 대형<small>${FORMS[cur].ic} ${FORMS[cur].n}</small></summary><div class="accb">
+      <div class="seg">${Object.keys(FORMS).map(k=>`<button data-act="form" data-f="${k}" class="${cur===k?'on':''}" ${can?'':'disabled'} title="${esc(FORMS[k].d)}">${FORMS[k].ic} ${FORMS[k].n}</button>`).join('')}</div>
+      <div class="sm muted" style="margin-top:8px">방진 &gt; 쐐기 &gt; 횡대 &gt; 방진. 상대 대형을 이기면 공방이 오르고, 지휘 장군의 통솔이 높을수록 우위가 커져요. 지면 절반만큼 손해예요. 상대는 내 대형을 미리 볼 수 없고, 봇은 최근에 본 대형을 노려요.</div></div></details>`;},
   genHTML(){
     const v=C.view,me=mePl();const mine=v.gens.filter(g=>g.owner===v.me&&g.status==='ok');const cnt=v.gens.filter(g=>g.owner===v.me).length;const can=v.phase==='plan';
     const stat=(g,k,l)=>`<button class="btn sm" data-act="train" data-gid="${g.id}" data-stat="${k}" ${!can||g[k]>=5||me.gold<30*(g[k]+1)?'disabled':''} title="${l} 단련">${l} ${g[k]}${g[k]>=5?'':' · +'+30*(g[k]+1)}</button>`;
@@ -4795,6 +4815,7 @@ const UI={
       case 'mkt':send({a:'mkt',op:d.op,good:d.good,n:+d.n});break;
       case 'autosell':send({a:'autosell',lv:+d.lv});break;
       case 'bld':send({a:'bld',tid:+d.tid,b:d.b});break;
+      case 'form':send({a:'form',f:d.f});break;
       case 'wonder':send({a:'wonder',tid:+d.tid,k:d.k});break;
       case 'post':send({a:'post',tid:+d.tid});break;
       case 'infl':send({a:'infl',tid:+d.tid});break;
