@@ -362,7 +362,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · b27</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · b28</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -3887,15 +3887,23 @@ const Battle={_skip:null,skipAll:false,snd:true,_ac:null,
  });}
 };
 
-/* 배경음악: 전투 음악. 첫 로딩을 줄이려고 게임 파일 옆의 mp3를 불러오고, 파일만 따로 받아 열었을 땐 사이트에서 불러온다 */
-const BGM_URI='CrownEnvoy-music.mp3',BGM_ALT='https://frenchfries777mc.github.io/crownenvoy/CrownEnvoy-music.mp3';
+/* 배경음악: 전투 음악과 잔잔한 곡을 번갈아 튼다. 첫 로딩을 줄이려고 게임 파일 옆의 mp3를 불러오고, 파일만 따로 받아 열었을 땐 사이트에서 불러온다.
+   k는 곡마다의 소리 크기 보정 (두 곡 모두 파일에서 같은 크기로 맞춰 둬서 지금은 1) */
+const BGM_TRACKS=[{uri:'CrownEnvoy-music.mp3',k:1},{uri:'CrownEnvoy-music2.mp3',k:1}],BGM_SITE='https://frenchfries777mc.github.io/crownenvoy/';
 
 /* 배경음악 재생기: 게임이 시작되면 반복 재생하고, 설정에서 켜고 끄거나 음량을 조절한다 (이 기기에만 저장) */
-const Music={el:null,vol:0.35,on:true,started:false,
+const Music={el:null,vol:0.35,on:true,started:false,ti:0,
   load(){try{const v=localStorage.getItem('ce_bgm_vol');if(v!==null&&!isNaN(+v))this.vol=Math.min(1,Math.max(0,+v));const o=localStorage.getItem('ce_bgm_on');if(o!==null)this.on=o==='1';}catch(_){}},
-  ensure(){if(!this.el){this.el=new Audio(BGM_URI);this.el.loop=true;this.el.preload='auto';this.el.addEventListener('error',()=>{const e=this.el;if(e.dataset.alt)return;e.dataset.alt='1';e.src=BGM_ALT;e.load();if(this.started&&this.on){const q=e.play();if(q&&q.catch)q.catch(()=>{this.started=false;});}});}this.el.volume=this.vol;return this.el;},
+  ensure(){if(!this.el){this.el=new Audio(BGM_TRACKS[0].uri);this.el.preload='auto';
+      this.el.addEventListener('error',()=>{const e=this.el;if(e.dataset.alt==='2')return;
+        if(!e.dataset.alt){e.dataset.alt='1';e.src=BGM_SITE+BGM_TRACKS[this.ti].uri;}else{e.dataset.alt='2';this.ti=0;e.src=BGM_SITE+BGM_TRACKS[0].uri;}   // 두 번째 곡을 못 불러오면 전투 음악만 반복
+        e.load();if(this.started&&this.on){const q=e.play();if(q&&q.catch)q.catch(()=>{this.started=false;});}});
+      this.el.addEventListener('ended',()=>this.next());}
+    this.el.volume=this.vol*BGM_TRACKS[this.ti].k;return this.el;},
+  next(){const e=this.el;if(!e)return;if(e.dataset.alt!=='2')this.ti=(this.ti+1)%BGM_TRACKS.length;
+    e.src=(e.dataset.alt?BGM_SITE:'')+BGM_TRACKS[this.ti].uri;e.volume=this.vol*BGM_TRACKS[this.ti].k;if(this.on){const q=e.play();if(q&&q.catch)q.catch(()=>{});}},
   start(){if(this.started||!this.on)return;try{const e=this.ensure();const p=e.play();this.started=true;if(p&&p.catch)p.catch(()=>{this.started=false;});}catch(_){this.started=false;}},
-  setVol(v){this.vol=Math.min(1,Math.max(0,v));try{localStorage.setItem('ce_bgm_vol',String(this.vol));}catch(_){}if(this.el)this.el.volume=this.vol;},
+  setVol(v){this.vol=Math.min(1,Math.max(0,v));try{localStorage.setItem('ce_bgm_vol',String(this.vol));}catch(_){}if(this.el)this.el.volume=this.vol*BGM_TRACKS[this.ti].k;},
   setOn(b){this.on=!!b;try{localStorage.setItem('ce_bgm_on',this.on?'1':'0');}catch(_){}
     if(!this.on){if(this.el)this.el.pause();this.started=false;}else{this.started=false;this.start();}}
 };
