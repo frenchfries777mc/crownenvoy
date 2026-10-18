@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 46</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 47</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -846,7 +846,7 @@ function popTick(){const mv={};   // 소유국별 이번 턴 난민 이동 요�
     }else if(t.pop<cap)t.pop=Math.min(cap,t.pop+0.03);else if(t.pop>cap)t.pop=Math.max(cap,t.pop-0.02);});
   Object.keys(mv).forEach(k=>{const m=mv[k];if(m.n<0.05)return;opnAdd(m.a,m.b,'refuge','난민을 받아 주었다',Math.min(12,Math.round(m.n*20)),14);log(`${pname(m.a)}의 전쟁터를 떠난 난민이 ${pname(m.b)}으로 흘러들었다.`,'dip');});}
 function income(pid){const p=G.players[pid];let s=0;owned(pid).forEach(t=>s+=KIND[TDEF[t.id].kind].inc*(TDEF[t.id].mul||1)*popMul(t)*(t.unrest>0?0.5:1)*((t.burn||0)>=G.round?0:1)*((isPort(t.id)&&blockaded(t.id,pid))?0.7:1));return Math.round(s*stabMult(p)*(p.incMult||1)*embMult(pid)*(1-(p.ww||0)/700)*polInc(p)+tradeBonus(pid)+tradeIncome(pid));}
-function upkeep(pid){if(G.players[pid].landless)return 0;const raw=Math.round(totalTroops(pid)*CFG.upkeepTroop*(1+pfx(pid,'upk'))+gensOf(pid).length*CFG.upkeepGen+G.dips.filter(d=>d.from===pid).length*CFG.upkeepDip);return Math.max(0,Math.min(raw,Math.floor(income(pid)*0.9)));}   // 유지비는 수입의 90%를 넘지 않는다(수입이 마이너스가 되지 않게)
+function upkeep(pid){if(G.players[pid].landless)return 0;const raw=Math.round(totalTroops(pid)*CFG.upkeepTroop*(1+pfx(pid,'upk'))+gensOf(pid).length*CFG.upkeepGen+G.dips.filter(d=>d.from===pid&&!d.emb).length*CFG.upkeepDip);return Math.max(0,Math.min(raw,Math.floor(income(pid)*0.9)));}   // 유지비는 수입의 90%를 넘지 않는다(수입이 마이너스가 되지 않게)
 const isHostile=(a,b)=>!!(G.hostile&&G.hostile[a<b?a+'-'+b:b+'-'+a]);
 const TLAB={nap:'불가침',trade:'무역',alliance:'동맹',passage:'군사 통행',truce:'휴전',vassal:'종속',union:'연합'};
 let _tc={arr:null,len:-1,map:null};
@@ -984,10 +984,11 @@ function act_(pid,m){
   case 'city':{if(G.phase!=='plan')return fail('계획 단계에서만 가능합니다.');const T=G.terr[m.tid];if(!T||T.owner!==pid||T.sea)return fail('내 영토를 선택하세요.');const lv=T.city||0;if(lv>=CITY_MAX)return fail(`도시는 최대 ${CITY_MAX}단계입니다.`);const c=cityCostOf(pid,lv);
     if(p.gold<c)return fail(`금화가 부족합니다 (필요 ${c})`);p.gold-=c;T.city=lv+1;return ok(`${TDEF[T.id].name} 도시 ${T.city}단계 (-${c}금) · 한 턴 징집 한도 ${conscriptCap(T).toLocaleString()}명`);}
   case 'hire':{if(G.phase!=='plan')return fail('계획 단계에서만 가능합니다.');if(G.gens.filter(g=>g.owner===pid&&g.status!=='dead').length>=CFG.maxGens)return fail('장군은 최대 ${CFG.maxGens}명입니다.');
-    if(p.gold<CFG.hire)return fail(`금화가 부족합니다 (필요 ${CFG.hire})`);p.gold-=CFG.hire;
+    const hc=hireCost(pid);if(p.gold<hc)return fail(`금화가 부족합니다 (필요 ${hc})`);p.gold-=hc;
     const nm=nameFor(pid);
     const st=[1,1,1];for(let i=ri(5,7);i>0;i--){const c=[0,1,2].filter(k=>st[k]<4);st[pick(c)]++;}
-    const g={id:G.uid++,owner:pid,name:nm,atk:st[0],def:st[1],lead:st[2],trait:pick(TRAIT_POOL),loc:p.cap,status:'ok',captor:null};G.gens.push(g);return ok(`장군 ${g.name} 고용 (-${CFG.hire}금)`);}
+    if(hc<CFG.hire){const c=[0,1,2].filter(k=>st[k]<5);if(c.length)st[pick(c)]++;}   // 사관학교 출신
+    const g={id:G.uid++,owner:pid,name:nm,atk:st[0],def:st[1],lead:st[2],trait:pick(TRAIT_POOL),loc:p.cap,status:'ok',captor:null};G.gens.push(g);return ok(`장군 ${g.name} 고용 (-${hc}금)`);}
   case 'train':{if(G.phase!=='plan')return fail('계획 단계에서만 가능합니다.');const g=G.gens.find(x=>x.id===m.gid&&x.owner===pid&&x.status==='ok');if(!g||!['atk','def','lead'].includes(m.stat))return fail('대상 오류');
     if(g[m.stat]>=5)return fail('이미 최대 능력치입니다.');const cost=30*(g[m.stat]+1);if(p.gold<cost)return fail(`금화가 부족합니다 (필요 ${cost})`);p.gold-=cost;g[m.stat]++;return ok(`${g.name} 단련 완료 (-${cost}금)`);}
   case 'fort':{if(G.phase!=='plan')return fail('계획 단계에서만 가능합니다.');const T=G.terr[m.tid];if(!T||T.owner!==pid)return fail('내 영토를 선택하세요.');if(T.fort>=3)return fail('요새는 최대 3단계입니다.');
@@ -1009,6 +1010,9 @@ function act_(pid,m){
     if(G.dips.some(d=>d.from===pid&&d.to===t))return fail('이미 파견했습니다.');if(G.dips.filter(d=>d.from===pid).length>=CFG.maxDips)return fail(`외교관은 동시에 ${CFG.maxDips}명까지 파견할 수 있습니다.`);
     if(p.gold<CFG.dipCost)return fail(`금화가 부족합니다 (필요 ${CFG.dipCost})`);p.gold-=CFG.dipCost;G.dips.push({id:G.uid++,from:pid,to:t,status:'active'});
     log(`${pname(pid)}이(가) ${pname(t)}에 외교관을 파견했다.`,'dip');return ok('외교관을 파견했습니다. 바로 대화할 수 있어요.');}
+  case 'embassy':{if(!inPlan)return fail('지금은 불가능합니다.');const d=G.dips.find(x=>x.from===pid&&x.to===m.to&&x.status==='active');if(!d)return fail('먼저 그 나라에 외교관을 파견하세요.');if(d.emb)return fail('이미 대사관이 있어요.');
+    if(isHostile(pid,m.to))return fail('전쟁 중인 나라에는 대사관을 열 수 없어요.');if(p.gold<EMB_COST)return fail(`금화가 부족합니다 (필요 ${EMB_COST})`);p.gold-=EMB_COST;d.emb=1;
+    log(`${pname(pid)}이(가) ${pname(m.to)}에 대사관을 열었다.`,'dip');return ok('대사관을 열었어요. 외교관 유지비가 사라지고, 매달 서로의 호감이 올라요.');}
   case 'recall':{const i=G.dips.findIndex(d=>d.from===pid&&d.to===m.to);if(i<0)return fail('파견한 외교관이 없습니다.');G.dips.splice(i,1);log(`${pname(pid)}이(가) ${pname(m.to)}에서 외교관을 철수시켰다.`,'dip');return ok('외교관 철수');}
   case 'expel':{const i=G.dips.findIndex(d=>d.to===pid&&d.from===m.from);if(i<0)return fail('해당 외교관이 없습니다.');G.dips.splice(i,1);log(`${pname(pid)}이(가) ${pname(m.from)}의 외교관을 추방했다!`,'warn');return ok('외교관 추방');}
   case 'propose':{if(!inPlan)return fail('지금은 불가능합니다.');const to=m.to;if(m.type==='truce')return proposeTruce(pid,+to,m.terms);if(!hasChannel(pid,to))return fail('외교 채널이 없습니다.');
@@ -1378,7 +1382,7 @@ function botTrade(pid){const p=G.players[pid];if(!p.alive||p.landless||!owned(pi
       if(src){const n=Math.floor(Math.min(src.troops*0.4,800)/10)*10;if(n>=200){G.orders[pid]=sanitizeOrders(pid,(G.orders[pid]||[]).concat([{from:src.id,to:goal,n,gid:null}]));}}}}
 }
 /* ===== 도시 건물 · 독점 · 상관 · 대출 · 가공 · 박람회 · 상업 스파이 ===== */
-const BLD={wall:{n:'성벽',ic:'🧱',cost:150,w:6,d:'수비 +30% · 포위에도 버텨요'},barr:{n:'병영',ic:'🏰',cost:180,w:6,d:'매턴 이 지역에 보병 60명이 저절로 모여요'},yard:{n:'조선소',ic:'⚓',cost:200,w:8,port:1,d:'상선이 1턴 빨라지고 한 척 더 보내요 · 앞바다 아군 함대에 매턴 병력 50명'},gran:{n:'곡창',ic:'🌾',cost:140,w:4,d:'매턴 밀가루 +4 · 포위돼도 굶지 않아요'},slau:{n:'도축장',ic:'🍖',cost:140,w:4,d:'매턴 고기 +3'},mart:{n:'시장',ic:'🏪',cost:160,w:5,d:'매턴 향신료 +2 · 수입 +6금'},work:{n:'공방',ic:'🔨',cost:220,w:6,d:'재고 3개를 완제품 1개로 가공해요 (시세 ×2.6)'},thea:{n:'극장',ic:'🎭',cost:260,w:8,d:'매턴 승점 +2 · 지도에 축제 불꽃'},forge:{n:'대장간',ic:'⚒️',cost:240,w:8,d:'징집 비용 -7% · 병종 업그레이드 비용 -10% (최대 2곳까지 겹쳐요)'},univ:{n:'대학',ic:'🎓',cost:300,w:8,d:'기술 연구 속도 +10% (최대 3곳까지 겹쳐요)'}};
+const BLD={wall:{n:'성벽',ic:'🧱',cost:150,w:6,d:'수비 +30% · 포위에도 버텨요'},barr:{n:'병영',ic:'🏰',cost:180,w:6,d:'매턴 이 지역에 보병 60명이 저절로 모여요'},yard:{n:'조선소',ic:'⚓',cost:200,w:8,port:1,d:'상선이 1턴 빨라지고 한 척 더 보내요 · 앞바다 아군 함대에 매턴 병력 50명'},gran:{n:'곡창',ic:'🌾',cost:140,w:4,d:'매턴 밀가루 +4 · 포위돼도 굶지 않아요'},slau:{n:'도축장',ic:'🍖',cost:140,w:4,d:'매턴 고기 +3'},mart:{n:'시장',ic:'🏪',cost:160,w:5,d:'매턴 향신료 +2 · 수입 +6금'},work:{n:'공방',ic:'🔨',cost:220,w:6,d:'재고 3개를 완제품 1개로 가공해요 (시세 ×2.6)'},thea:{n:'극장',ic:'🎭',cost:260,w:8,d:'매턴 승점 +2 · 지도에 축제 불꽃'},forge:{n:'대장간',ic:'⚒️',cost:240,w:8,d:'징집 비용 -7% · 병종 업그레이드 비용 -10% (최대 2곳까지 겹쳐요)'},univ:{n:'대학',ic:'🎓',cost:300,w:8,d:'기술 연구 속도 +10% (최대 3곳까지 겹쳐요)'},acad:{n:'사관학교',ic:'🎖️',cost:300,w:8,d:'여기 주둔한 장군이 6턴마다 가장 낮은 능력치 +1 (최대 5) · 장군 고용비 -25%, 새 장군은 능력치 +1로 시작'}};
 const nBld=(pid,b,mx)=>Math.min(mx,owned(pid).filter(t=>hasB(t,b)&&!(t.unrest>0)).length);
 const FIN={wood:['가구','🪑'],meat:['훈제 고기','🥓'],flour:['빵','🍞'],spice:['향유','🧴']};
 const FINX=2.6,MONO_COST=220,MONO_TURNS=12,POST_COST=150,FAIR_COST=40,LOANS=[100,200,400];
@@ -1596,7 +1600,21 @@ function fairTick(){if(G.nextFair==null)G.nextFair=G.round+ri(8,12);const f=G.fa
     G.players.forEach(p=>{if(p.alive&&p.isBot&&!p.landless&&Math.random()<0.6&&p.gold>=FAIR_COST+80){p.gold-=FAIR_COST;p.vp+=3;G.fair.part.push(p.id);}});
     if(!G.turnEvents)G.turnEvents=[];G.turnEvents.push({r:G.round,date:ymOf(G.round),head:'무역 박람회가 열리다',body:`항구마다 천막이 들어서고 상인들이 모여들었다. ${GOODS[g].n} 거래가 특히 활발하다. (참가하면 3턴간 관세 면제 · ${GOODS[g].n} 판매가 +50% · 참가국이 많을수록 수입)`,scene:'treaty',ca:'#8a7a5a',cb:'#3a3a40'});
     log(`무역 박람회가 열렸다. (${GOODS[g].n} 특가 · 3턴)`,'event');}}
-function bldTick(){bldSync();wdTick();
+/* ===== 사관학교 · 대사관 · 포위망 ===== */
+const ACAD_TURNS=6,EMB_COST=200,ENC_LOSS=0.08;
+const hireCost=pid=>Math.round(CFG.hire*(owned(pid).some(t=>hasB(t,'acad'))?0.75:1));
+function acadTick(){G.gens.forEach(g=>{if(g.status!=='ok')return;const T=G.terr[g.loc];if(!T||T.owner!==g.owner||!hasB(T,'acad')||T.unrest>0)return;g.ac=(g.ac||0)+1;if(g.ac<ACAD_TURNS)return;g.ac=0;
+  const ks=['atk','def','lead'].filter(k=>g[k]<5).sort((a,b)=>g[a]-g[b]);if(!ks.length)return;g[ks[0]]++;log(`${pname(g.owner)}의 ${g.name}이(가) 사관학교에서 ${{atk:'공격',def:'방어',lead:'통솔'}[ks[0]]}을(를) 갈고닦았다. (${g[ks[0]]})`,'sys');});}
+function embTick(){G.dips.forEach(d=>{if(!d.emb||d.status!=='active'||!G.players[d.to]||!G.players[d.from])return;opnAdd(d.to,d.from,'emb','대사관 교류',8,3);opnAdd(d.from,d.to,'emb','대사관 교류',4,3);});}
+/* 포위망: 맞닿은 육지가 모두 적(전쟁 중인 나라)의 땅이면 보급이 끊겨 매달 병력이 줄고, 그 나라 사기가 떨어진다 */
+function encTick(){const seen=new Set();G.terr.forEach(t=>{if(t.sea||t.owner==null){t.encN=0;return;}
+  const X=t.owner,nb=GEO.adj[t.id].filter(n=>!G.terr[n].sea);
+  const enc=nb.length>=2&&nb.every(n=>{const o=G.terr[n].owner;return o!=null&&o!==X&&isHostile(X,o);});
+  if(!enc){t.encN=0;return;}
+  t.encN=(t.encN||0)+1;if(t.troops>10)t.troops=Math.max(10,Math.round(t.troops*(1-ENC_LOSS)/10)*10);
+  if(!seen.has(X)){seen.add(X);morAdd(G.players[X],-1,'포위망에 갇힘');}
+  if(t.encN===1)log(`${TDEF[t.id].name}이(가) 적에게 둘러싸여 보급이 끊겼다. (${G.players[X].kingdom})`,'war');});}
+function bldTick(){bldSync();wdTick();acadTick();embTick();encTick();
   G.players.forEach(p=>{if(!p.alive)return;p.fin=p.fin||{};p.stock=p.stock||{};
     owned(p.id).forEach(t=>{if(!t.bl)return;
       const bx=1+pfx(p.id,'bfx');
@@ -2206,6 +2224,7 @@ function botOps(pid){
   {p.dmCd=p.dmCd||{};G.players.forEach(q=>{if(q.isBot||!q.alive||q.id===pid||!isHostile(pid,q.id)||p.landless)return;if(warAge(pid,q.id)<3||(p.dmCd[q.id]||0)>G.round||Math.random()>0.45)return;
     if(G.props.some(x=>x.type==='truce'&&((x.from===pid&&x.to===q.id)||(x.from===q.id&&x.to===pid))))return;
     if(peaceStat(pid,q.id).t<2)return;p.dmCd[q.id]=G.round+3;tcRequest(pid,q.id,true);});}
+  if(p.gold>450&&Math.random()<0.25){const ed=G.dips.find(x=>x.from===pid&&x.status==='active'&&!x.emb&&!isHostile(pid,x.to));if(ed)act(pid,{a:'embassy',to:ed.to});}
   if(G.dips.filter(d=>d.from===pid).length<CFG.maxDips&&p.gold>80&&Math.random()<0.7){const c=G.players.filter(o=>o.alive&&o.id!==pid&&!G.dips.some(d=>d.from===pid&&d.to===o.id));if(c.length)act(pid,{a:'dispatch',to:pick(c).id});}
   for(const o of G.players){if(!G.tplId&&o.id!==pid&&o.alive&&!isHostile(pid,o.id)&&p.trust>=50&&hasChannel(pid,o.id)&&treatyBetween(pid,o.id,'nap')&&!treatyBetween(pid,o.id,'alliance')&&!G.props.some(x=>x.type==='alliance'&&((x.from===pid&&x.to===o.id)||(x.from===o.id&&x.to===pid)))&&Math.random()<0.12)act(pid,{a:'propose',type:'alliance',to:o.id,secret:false});}
   /* (옛 방식의 무작위 불가침·무역 제안은 호감도 기반의 aiDiplomacy로 대체했다) */
@@ -3249,7 +3268,7 @@ function makeView(pid,opts){const omni=!!(opts&&opts.omni);const DPT=cedeGeo();
       if(full){o.troops=totalTroops(p.id);o.morale=Math.round(clamp(p.morale*polMor(p),0,100));}
       if(p.id===pid){o.fin=Object.assign({},p.fin||{});o.rs={need:rsNeed(pid),prod:rsProd(pid),short:Object.assign({},p.short||{}),rev:Math.round(shortRev(p)*100)};o.mor=morView(p);o.pendN=pendOf(pid);o.cvmax=convMax(pid);o.ut=[utier(pid,'i'),utier(pid,'c'),utier(pid,'a')];o.tav=[convAvail(pid,'i'),convAvail(pid,'c'),convAvail(pid,'a')];o.obj=objView(p);o.fcost=fortCostOf(pid);o.tcost=trenchCostOf(pid);o.scost=scoutCostOf(pid);o.goals=(p.goals||[]).map(g=>({k:g.k,enemy:g.enemy,prog:g.prog,done:g.done,need:GOALS[g.k].need,n:GOALS[g.k].n}));o.ww=Math.round(p.ww||0);o.tariff=Object.assign({},p.tariff||{});o.autoSell=p.autoSell||0;o.tbk={route:routeGold(pid),market:marketGold(pid),imp:importGold(pid)};o.deals=(G.deals||[]).filter(d=>d.until>=G.round&&(d.a===pid||d.b===pid)).map(d=>{const mineA=d.a===pid;return {id:d.id,w:mineA?d.b:d.a,give:mineA?d.ga:d.gb,get:mineA?d.gb:d.ga,gold:mineA?d.gold:-d.gold,left:d.until-G.round};});o.convoys=(G.convoys||[]).filter(c=>c.owner===pid).map(c=>({to:c.to,left:Math.max(0,c.due-G.round),v:c.value}));{const gg=goodsOf(pid);o.goods={own:[...gg.own],imp:[...gg.imp]};o.tin=tradeIncome(pid);}o.income=income(pid);o.upkeep=upkeep(pid);o.capacity=capacity(pid);o.under=underdog(pid);o.pol=polView(pid);}
       return o;}),
-    terr:G.terr.map(t=>{const full=t.owner==null||sees(t.owner);const o={id:t.id,plg:t.plg||0,burn:(t.burn||0)>=G.round?1:0,port:(!t.sea&&isPort(t.id))?(blockaded(t.id,t.owner==null?-1:t.owner)&&t.owner!=null?2:1):0,owner:t.owner,fort:t.fort,trench:t.trench||0,oos:t.oos?1:0,siege:t.siege||0,unrest:t.unrest,dp:DPT.dp[t.id],cd:DPT.cd[t.id],tier:tierOf(t.troops)};if(t.mark&&t.mark.until>=G.round)o.mk={k:t.mark.k,t:t.mark.t};if(t.post)o.post=t.post.by;if(t.wd)o.wd=t.wd;if(t.wp)o.wp={k:t.wp.k,left:t.wp.left};if(full){if(t.bl)o.bl=t.bl.slice();if(!t.sea&&t.owner!=null)o.pop=Math.round(popIdx(t)*100)/100;o.troops=t.troops;if(t.troops>0){const cu=compOf(t);o.u=[cu.i,cu.c,cu.a];if(t.owner!=null){const vf=vfOf(t),r2=x=>Math.round(x*100)/100;o.uv=[vf.i.map(r2),vf.c.map(r2),vf.a.map(r2)];const ow=t.owner!=null?G.players[t.owner]:null;if(ow){let xl=0;['i','c','a'].forEach(k=>{const j=vf[k].indexOf(Math.max(...vf[k]));xl=Math.max(xl,xlv(ow,k,j));});o.xl=xl;}}}}if(t.inf&&!t.sea){let tk=-1,tv=0;Object.keys(t.inf).forEach(k=>{if(t.inf[k]>tv){tv=t.inf[k];tk=+k;}});const mm=t.inf[pid]||0;if(t.owner===pid&&tv>0)o.inf={m:0,k:tk,tv};else if(mm>0)o.inf={m:mm,k:pid,tv:mm};}if(t.gst&&t.gst[pid]>0){o.mygst=t.gst[pid];{const gu=compOf(t,pid);o.gu=[gu.i,gu.c,gu.a];}}if(t.owner===pid&&!t.sea){if(t.mc&&t.mc.length){o.mcn=t.mc.reduce((q,x)=>q+x.n,0);o.mcl=Math.max(...t.mc.map(x=>x.until))-G.round+1;}o.city=t.city||0;o.mkt=t.mkt||0;o.mcost=(isPort(t.id)&&(t.mkt||0)<2)?MKT_COST[t.mkt||0]:0;o.ccap=conscriptCap(t);o.dr=t.drafted||0;if(t.pend)o.pend=t.pend.reduce((q,x)=>q+x.n,0);o.ccost=(t.city||0)<CITY_MAX?cityCostOf(pid,t.city||0):0;}if(t.owner===pid&&t.gst){const sg=Object.keys(t.gst).reduce((a,k)=>a+(t.gst[k]||0),0);if(sg>0)o.allyg=sg;}return o;}),
+    terr:G.terr.map(t=>{const full=t.owner==null||sees(t.owner);const o={id:t.id,plg:t.plg||0,burn:(t.burn||0)>=G.round?1:0,port:(!t.sea&&isPort(t.id))?(blockaded(t.id,t.owner==null?-1:t.owner)&&t.owner!=null?2:1):0,owner:t.owner,fort:t.fort,trench:t.trench||0,oos:t.oos?1:0,siege:t.siege||0,enc:t.encN||0,unrest:t.unrest,dp:DPT.dp[t.id],cd:DPT.cd[t.id],tier:tierOf(t.troops)};if(t.mark&&t.mark.until>=G.round)o.mk={k:t.mark.k,t:t.mark.t};if(t.post)o.post=t.post.by;if(t.wd)o.wd=t.wd;if(t.wp)o.wp={k:t.wp.k,left:t.wp.left};if(full){if(t.bl)o.bl=t.bl.slice();if(!t.sea&&t.owner!=null)o.pop=Math.round(popIdx(t)*100)/100;o.troops=t.troops;if(t.troops>0){const cu=compOf(t);o.u=[cu.i,cu.c,cu.a];if(t.owner!=null){const vf=vfOf(t),r2=x=>Math.round(x*100)/100;o.uv=[vf.i.map(r2),vf.c.map(r2),vf.a.map(r2)];const ow=t.owner!=null?G.players[t.owner]:null;if(ow){let xl=0;['i','c','a'].forEach(k=>{const j=vf[k].indexOf(Math.max(...vf[k]));xl=Math.max(xl,xlv(ow,k,j));});o.xl=xl;}}}}if(t.inf&&!t.sea){let tk=-1,tv=0;Object.keys(t.inf).forEach(k=>{if(t.inf[k]>tv){tv=t.inf[k];tk=+k;}});const mm=t.inf[pid]||0;if(t.owner===pid&&tv>0)o.inf={m:0,k:tk,tv};else if(mm>0)o.inf={m:mm,k:pid,tv:mm};}if(t.gst&&t.gst[pid]>0){o.mygst=t.gst[pid];{const gu=compOf(t,pid);o.gu=[gu.i,gu.c,gu.a];}}if(t.owner===pid&&!t.sea){if(t.mc&&t.mc.length){o.mcn=t.mc.reduce((q,x)=>q+x.n,0);o.mcl=Math.max(...t.mc.map(x=>x.until))-G.round+1;}o.city=t.city||0;o.mkt=t.mkt||0;o.mcost=(isPort(t.id)&&(t.mkt||0)<2)?MKT_COST[t.mkt||0]:0;o.ccap=conscriptCap(t);o.dr=t.drafted||0;if(t.pend)o.pend=t.pend.reduce((q,x)=>q+x.n,0);o.ccost=(t.city||0)<CITY_MAX?cityCostOf(pid,t.city||0):0;}if(t.owner===pid&&t.gst){const sg=Object.keys(t.gst).reduce((a,k)=>a+(t.gst[k]||0),0);if(sg>0)o.allyg=sg;}return o;}),
     gens:G.gens.filter(g=>g.status!=='dead').map(g=>{const full=g.owner===pid||sees(g.owner)||g.captor===pid;const o={id:g.id,owner:g.owner,name:g.name,xp:g.xp||0,grade:gradeOf(g),loc:g.loc,status:g.status,captor:g.captor};if(full){o.atk=g.atk;o.def=g.def;o.lead=g.lead;o.trait=g.trait;}return o;}),
     relics:Object.assign({},G.relics||{}),
     fac:omni?null:facView(pid),bonds:omni?[]:((G.players[pid].bonds||[]).map(b=>({id:b.id,amt:b.amt,per:b.per,left:b.left,miss:b.miss||0,pay:Math.round(b.left*b.per*0.9)}))),bondLim:omni?0:bondLimit(pid),band:omni?[]:bandView(pid),
@@ -3653,6 +3672,7 @@ const MapView={cv:null,ctx:null,W:0,H:0,dpr:1,scale:1,ox:0,oy:0,hover:-1,deco:[]
       if(e>=0.5&&T.city>0){c.fillStyle='#bfe3ff';c.strokeStyle='#000b';c.lineWidth=3;c.font="700 10px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.textAlign='center';c.strokeText('도시 Lv'+T.city,-36,-26);c.fillText('도시 Lv'+T.city,-36,-26);}
       if(e>=0.5&&T.unrest>0){c.fillStyle='#ffb0a2';c.strokeStyle='#000b';c.lineWidth=3;c.font="700 10px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.strokeText('불안',-30,-12);c.fillText('불안',-30,-12);}
       if(e>=0.5&&T.siege>0){c.fillStyle='#ffd27a';c.strokeStyle='#000b';c.lineWidth=3;c.textAlign='center';c.strokeText('포위 '+T.siege+'개월',-30,3);c.fillText('포위 '+T.siege+'개월',-30,3);}
+      if(e>=0.5&&T.enc>0){c.fillStyle='#ff9d9d';c.strokeStyle='#000b';c.lineWidth=3;c.textAlign='center';c.strokeText('고립 '+T.enc+'개월',-30,T.siege>0?15:3);c.fillText('고립 '+T.enc+'개월',-30,T.siege>0?15:3);}
       if(e>=0.5&&T.plg>0){c.fillStyle='#b6f0a0';c.strokeStyle='#000b';c.lineWidth=3;c.textAlign='center';c.strokeText('🦠 역병 '+T.plg+'개월',-30,33);c.fillText('🦠 역병 '+T.plg+'개월',-30,33);}
       if(e>=0.5&&T.oos){c.fillStyle='#ff9a86';c.strokeStyle='#000b';c.lineWidth=3;c.textAlign='center';c.strokeText('보급 끊김',-30,18);c.fillText('보급 끊김',-30,18);}
       if(e>=0.5&&T.city>0&&T.owner===v.me){c.fillStyle='#e8e0a0';c.strokeStyle='#000b';c.lineWidth=3;c.textAlign='center';c.strokeText('도시 Lv.'+T.city,36,18);c.fillText('도시 Lv.'+T.city,36,18);}
@@ -4992,11 +5012,11 @@ const UI={
       <div class="seg">${Object.keys(FORMS).map(k=>`<button data-act="form" data-f="${k}" class="${cur===k?'on':''}" ${can?'':'disabled'} title="${esc(FORMS[k].d)}">${FORMS[k].ic} ${FORMS[k].n}</button>`).join('')}</div>
       <div class="sm muted" style="margin-top:8px">방진 &gt; 쐐기 &gt; 횡대 &gt; 방진. 상대 대형을 이기면 공방이 오르고, 지휘 장군의 통솔이 높을수록 우위가 커져요. 지면 절반만큼 손해예요. 상대는 내 대형을 미리 볼 수 없고, 봇은 최근에 본 대형을 노려요.</div></div></details>`;},
   genHTML(){
-    const v=C.view,me=mePl();const mine=v.gens.filter(g=>g.owner===v.me&&g.status==='ok');const cnt=v.gens.filter(g=>g.owner===v.me).length;const can=v.phase==='plan';
+    const v=C.view,me=mePl();const mine=v.gens.filter(g=>g.owner===v.me&&g.status==='ok');const cnt=v.gens.filter(g=>g.owner===v.me).length;const can=v.phase==='plan';const hcv=Math.round(CFG.hire*(v.terr.some(t=>t.owner===v.me&&(t.bl||[]).includes('acad'))?0.75:1));
     const stat=(g,k,l)=>`<button class="btn sm" data-act="train" data-gid="${g.id}" data-stat="${k}" ${!can||g[k]>=5||me.gold<30*(g[k]+1)?'disabled':''} title="${l} 단련">${l} ${g[k]}${g[k]>=5?'':' · +'+30*(g[k]+1)}</button>`;
     let h=`<details class="acc" data-acc="gen" ${C.acc.gen?'open':''}><summary>장군<small>${cnt}/${CFG.maxGens}</small></summary><div class="accb">`;
     h+=mine.map(g=>`<div class="card"><div class="row"><div><b>${esc(g.name)}</b> <span class="tag">${g.grade}</span><span class="tag hot">${TRAITS[g.trait]}</span></div><div class="sm muted" style="flex:none">${esc(TDEF[g.loc].name)}</div></div><div class="sm muted" style="margin:3px 0 6px">${TRAIT_DESC[g.trait]}</div><div class="quick">${stat(g,'atk','공격')}${stat(g,'def','수비')}${stat(g,'lead','통솔')}</div></div>`).join('')||'<div class="muted sm">활동 중인 장군이 없습니다.</div>';
-    h+=`<div class="row" style="margin:6px 0 0;justify-content:space-between"><span class="sm muted">장군은 이동 명령에 태워 옮깁니다.</span><button class="btn sm primary" data-act="hire" ${!can||cnt>=CFG.maxGens||me.gold<CFG.hire?'disabled':''}>고용 ${CFG.hire}금</button></div>`;
+    h+=`<div class="row" style="margin:6px 0 0;justify-content:space-between"><span class="sm muted">장군은 이동 명령에 태워 옮깁니다.</span><button class="btn sm primary" data-act="hire" ${!can||cnt>=CFG.maxGens||me.gold<hcv?'disabled':''}>고용 ${hcv}금${hcv<CFG.hire?' (사관학교 할인)':''}</button></div>`;
     const held=v.gens.filter(g=>g.captor===v.me&&g.status==='captured'),lost=v.gens.filter(g=>g.owner===v.me&&g.status==='captured');
     if(held.length)h+='<div class="sm" style="margin-top:10px"><b>잡아 둔 포로</b></div>'+held.map(g=>`<div class="row" style="margin-top:4px"><span>${esc(g.name)} <span class="muted sm">(${esc(v.players[g.owner].kingdom)})</span></span><button class="btn sm" data-act="release" data-gid="${g.id}">석방</button></div>`).join('');
     if(lost.length)h+='<div class="sm" style="margin-top:10px"><b>붙잡힌 우리 장군</b></div>'+lost.map(g=>`<div class="sm muted" style="margin-top:3px">${esc(g.name)} — ${esc(v.players[g.captor].kingdom)}에 억류됨 (외교 탭에서 몸값 제안)</div>`).join('');
@@ -5028,7 +5048,7 @@ const UI={
       let c=`<div class="card"><div class="row" style="margin-bottom:6px"><div>${nat(p)}${p.ally?' <span class=tag-hot style=color:var(--gold)>동맹</span>':''}${p.hostile?' <span class=tag-war style=color:#ff9a86>적대</span>':''}</div><div style="flex:none;text-align:right" class="sm muted">신뢰도 ${p.trust}</div></div>${p.persona?`<div class="sm" style="margin:-2px 0 6px"><span class="tag" title="${esc(PERSONA_DESC[p.persona]||'')}">성향 · ${esc(p.persona)}</span> <span class="muted">${esc(PERSONA_DESC[p.persona]||'')}</span></div>`:''}`;
       c+=`<div class="row" style="gap:6px;margin-bottom:6px">`;
       if(!mine)c+=`<button class="btn sm" data-act="dispatch" data-to="${p.id}" ${myDips.length>=CFG.maxDips||me.gold<CFG.dipCost?'disabled':''}>외교관 파견 ${CFG.dipCost}금</button>`;
-      else c+=`<div class="sm" style="flex:2">${mine.status==='active'?'<span class="tag good">외교관 주재 중</span>':'<span class="tag hot">이동 중 (다음 라운드 도착)</span>'}</div><button class="btn sm" data-act="recall" data-to="${p.id}">철수</button>`;
+      else c+=`<div class="sm" style="flex:2">${mine.status==='active'?`<span class="tag good">${mine.emb?'대사관 개설됨':'외교관 주재 중'}</span>`:'<span class="tag hot">이동 중 (다음 라운드 도착)</span>'}</div>${mine.status==='active'&&!mine.emb&&!p.hostile?`<button class="btn sm" data-act="embassy" data-to="${p.id}" title="외교관을 대사관으로 키워요: 유지비가 사라지고 매달 서로의 호감이 올라요" ${me.gold<200?'disabled':''}>대사관 200금</button>`:''}<button class="btn sm" data-act="recall" data-to="${p.id}">철수</button>`;
       if(theirs)c+=`<button class="btn sm danger" data-act="expel" data-from="${p.id}">상대 외교관 추방</button>`;c+=`</div>`;
       c+=UI.warRow(p,me,out,trs);
 
@@ -5174,6 +5194,7 @@ const UI={
       case 'cowar':{const e=+d.to,sel=document.getElementById('cw'+e);if(sel)send({a:'cowar',to:+sel.value,enemy:e});break;}
       case 'marry':{const to=+d.to;UI.ask('지참금 120금을 보내고 48턴짜리 왕실 혼인을 맺을까요?',()=>send({a:'marry',to}));break;}
       case 'recall':send({a:'recall',to:+d.to});break;
+      case 'embassy':send({a:'embassy',to:+d.to});break;
       case 'cancelAlliance':{const to=+d.to;UI.ask('동맹을 해제할까요?\n해제한 뒤 다시 맺으려면 신뢰도 50 이상으로 새로 제안해야 해요.',()=>send({a:'cancel',to}),{yes:'동맹 해제'});break;}
       case 'expel':send({a:'expel',from:+d.from});break;
       case 'respond':send({a:'respond',id:+d.id,accept:d.ok==='1'});break;
@@ -5409,7 +5430,7 @@ Object.assign(UI,{
       if(rel)c+=`<div class="dft">관계가 이렇게 된 이유</div><div class="rels">${rel.items.map(x=>`<div class="rel"><span>${esc(x.t)}</span><b class="${x.v>0?'pos':'neg'}">${x.v>0?'+':''}${x.v}</b></div>`).join('')||'<div class="sm muted">특별한 이유가 없어요.</div>'}</div>`;
       trs.forEach(t=>{if(t.type==='alliance')c+=`<div class="row" style="margin-top:6px"><span class="tag hot">동맹 지속 중</span><button class="btn sm danger" style="flex:none" data-act="cancelAlliance" data-to="${p.id}">동맹 해제</button></div>`;});
       if(theirs)c+=`<div class="sm muted" style="margin-top:6px">${esc(p.kingdom)}의 외교관이 우리 영토에 머물고 있습니다. <button class="btn sm danger" data-act="expel" data-from="${p.id}">추방</button></div>`;
-      if(mine)c+=`<div class="sm" style="margin-top:6px"><span class="tag good">우리 외교관 주재 중</span> <button class="btn sm" data-act="recall" data-to="${p.id}">철수</button></div>`;
+      if(mine)c+=`<div class="sm" style="margin-top:6px"> <span class="tag good">${mine.emb?'우리 대사관 있음':'우리 외교관 주재 중'}</span> ${mine.status==='active'&&!mine.emb&&!p.hostile?`<button class="btn sm" data-act="embassy" data-to="${p.id}" ${mePl().gold<200?'disabled':''}>대사관 200금</button> `:''}<button class="btn sm" data-act="recall" data-to="${p.id}">철수</button></div>`;
       const msgs=(C.chats[p.id]||[]).map(m=>`<div class="m ${m.from===v.me?'me':''}"><span><b>${m.from===v.me?'나':esc(p.kingdom)}</b> ${esc(m.text)}</span></div>`).join('');
       c+=`<div class="dft" style="margin-top:8px">서신</div><div class="chatbox" data-chat="${p.id}">${msgs||'<div class="muted sm">아직 대화가 없습니다. 이 대화는 두 나라만 볼 수 있습니다.</div>'}</div><div class="row" style="gap:6px"><input type="text" id="chatIn${p.id}" data-chatin="${p.id}" maxlength="200" placeholder="서신 내용" style="flex:1;min-width:0"><button class="btn sm" style="flex:none" data-act="chat" data-to="${p.id}">보내기</button></div>`;
       if(!trs.some(t=>t.type==='alliance'))c+=`<div class="dft" style="margin-top:8px">병력 지원</div><div class="row" style="gap:6px;flex-wrap:wrap;align-items:center"><input type="number" id="aidT${p.id}" min="10" step="${10*UN}" value="${100*UN}" style="width:76px;flex:none"><button class="btn sm" data-act="aid" data-mode="give" data-what="troops" data-to="${p.id}">보내기</button></div>`;
