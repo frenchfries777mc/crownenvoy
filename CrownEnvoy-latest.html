@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 51</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 52</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -4303,7 +4303,9 @@ const Ed={
   loadAll(){try{const l=JSON.parse(localStorage.getItem(this.KEY)||'[]');if(!Array.isArray(l))return [];let ch=false;l.forEach(t=>{if(t&&MAPDATA[t.map]&&MAPDATA[t.map].merged&&t.mrev!==MREV){remapTpl(t);ch=true;}if(t&&BOSP_ID[t.map]&&t.crev!==CITY_REV){padTpl(t);ch=true;}});if(ch)try{localStorage.setItem(this.KEY,JSON.stringify(l));}catch(_){}return l;}catch(_){return [];}},
   saveAll(l){try{localStorage.setItem(this.KEY,JSON.stringify(l));return true;}catch(_){return false;}},
   injectSaved(){this.loadAll().forEach(t=>{if(t&&t.id&&MAPDATA[t.map]&&!TEMPLATES.some(x=>x.id===t.id))TEMPLATES.push(t);});},
-  newNation(i){return {name:'나라 '+(i+1),color:this.COLORS[i%this.COLORS.length],neu:false,str:1,cap:null,gov:'',fai:''};},
+  /* 색이 모자라면 황금각으로 새 색을 만든다 (나라 수 제한 없음) */
+  natColor(i){if(i<this.COLORS.length)return this.COLORS[i];const h=(i*137.508)%360,l=0.42+0.1*(i%3),s_=0.55+0.12*((i>>1)%3),a=s_*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12,c=l-a*Math.max(-1,Math.min(k-3,9-k,1));return Math.round(255*c).toString(16).padStart(2,'0');};return '#'+f(0)+f(8)+f(4);},
+  newNation(i){return {name:'나라 '+(i+1),color:this.natColor(i),neu:false,str:1,cap:null,gov:'',fai:''};},
   EVK:[['war','선전포고'],['peace','휴전'],['ally','동맹'],['revolt','반란'],['gold','금화'],['cede','영토 양도'],['news','소식']],
   /* ---- 영토별 설정: 도시 단계(-1=자동)·요새 단계·건물 ---- */
   defsFrom(t){const o={};(t.regionDefs||[]).forEach(d=>{if(!Number.isInteger(d.id)||!this.tdefOK(t.map,d.id))return;o[d.id]={city:Number.isInteger(d.city)?clamp(d.city,0,3):-1,fort:clamp(d.fort|0,0,3),bl:(d.bl||[]).filter(b=>BLD[b]).slice(0,4)};});return o;},
@@ -4337,7 +4339,7 @@ const Ed={
       if(r.error)throw r.error;this.shSet(id,r.data);this.renderSide();this.say(this.getPrice(id)?`공유했어요! 가격은 ${this.getPrice(id)}cC예요. 다른 사람이 체험해 보고 살 수 있어요.`:'공유했어요! 다른 사람이 [공유 시나리오 둘러보기]에서 내려받을 수 있어요.');}
     catch(e){const m=String(e&&e.message||e);this.say(/limit/.test(m)?'시나리오는 30개까지 공유할 수 있어요. 둘러보기에서 안 쓰는 것을 지우세요.':'공유하지 못했어요. 잠시 뒤 다시 해 보세요.',true);}},
   shClose(){const o=$('#shOv');if(o)o.remove();},
-  valid(t){return !!(t&&Array.isArray(t.nations)&&t.nations.length>=2&&t.nations.length<=12&&Array.isArray(t.owner)&&MAPDATA[t.map]&&t.owner.length===mapBuild(t.map).tdef.length&&t.nations.every(n=>n&&typeof n.name==='string'&&typeof n.color==='string'&&Number.isInteger(n.cap)));},
+  valid(t){return !!(t&&Array.isArray(t.nations)&&t.nations.length>=2&&Array.isArray(t.owner)&&MAPDATA[t.map]&&t.nations.length<=MAPDATA[t.map].terr.length&&t.owner.length===mapBuild(t.map).tdef.length&&t.nations.every(n=>n&&typeof n.name==='string'&&typeof n.color==='string'&&Number.isInteger(n.cap)));},
   async browse(sort){this.shClose();const o=document.createElement('div');o.id='shOv';document.body.appendChild(o);const me=window.CEAuth&&CEAuth.user();
     const tabs=[['likes','추천순'],['new','최신순']].concat(me?[['mine','내가 올린']]:[]);
     o.innerHTML=`<div class="ab"><div class="ah"><h2>🌐 공유 시나리오</h2><span class="mu" id="ccBal">${window.CECoin&&CECoin.bal!=null?'👑 '+CECoin.bal+'cC':''}</span><button class="x" data-sh="close" aria-label="닫기">✕</button></div><div class="tb">${tabs.map(([k,l])=>`<button class="btn sm ${k===sort?'on':''}" data-sh="tab" data-k="${k}">${l}</button>`).join('')}</div><div id="shBody" class="mu">불러오는 중…</div></div>`;
@@ -4411,7 +4413,7 @@ const Ed={
       <label>지도</label><select id="edMap">${MAPS.map((m,i)=>`<option value="${i}" ${i===st.mapId?'selected':''}>${esc(m.name)} (${m.count}개)</option>`).join('')}</select>
       <label>시작 연도</label><div style="display:flex;gap:6px"><input type="number" id="edYear" min="-3000" max="2100" step="1" value="${esc(String(st.year))}" placeholder="예: 1700 (비우면 연도 없음)" style="flex:1"><select id="edMonth" style="width:80px">${this.MONTHS.map((l,i)=>`<option value="${i+1}" ${st.month===i+1?'selected':''}>${l}</option>`).join('')}</select></div>
       <h3>나라 <span class="muted sm" style="font-weight:400">— 나라를 눌러 고른 뒤 지도에 칠하세요</span></h3>${nations}
-      <button class="btn sm" data-ed="addnat" ${st.nations.length>=12?'disabled':''}>+ 나라 추가</button>
+      <button class="btn sm" data-ed="addnat" ${st.nations.length>=this.tdef.filter(t=>!t.sea).length?'disabled':''}>+ 나라 추가</button>
       ${act?`<div style="margin-top:8px;font-size:13px"><b style="color:${act.color}">${esc(act.name)}</b> · 수도: ${capName?esc(capName):'<span class="edwarn" style="display:inline">아직 없음 (자동 지정)</span>'}
         <div class="edrel"><span>병력</span><select data-edstr="1">${this.STR.map(([v,l])=>`<option value="${v}" ${act.str===v?'selected':''}>${l}</option>`).join('')}</select></div>
         <div class="edrel"><span>난이도</span><select data-eddiff="1">${DIFF.map((d,i)=>`<option value="${i}" ${(act.diff!=null?act.diff:2)===i?'selected':''}>${'★'.repeat(i+1)} ${d.n}</option>`).join('')}</select></div>
@@ -4506,7 +4508,7 @@ const Ed={
       if(['war','peace','ally','cede'].includes(e.k)&&+e.a===+e.b){this.say('서로 다른 두 나라를 고르세요.',true);return;}if(e.k==='cede'&&!this.cedeList(e.a).includes(e.r)){this.say('양도할 영토를 고르세요. (수도는 양도할 수 없어요)',true);return;}if(e.k==='news'&&!(e.txt||'').trim()){this.say('소식 문구를 입력하세요.',true);return;}
       if(st.evs.length>=40){this.say('이벤트는 40개까지 넣을 수 있어요.',true);return;}e.a=+e.a;e.b=+e.b;e.n=Math.round(+e.n||0);e.txt=(e.txt||'').trim();st.evs.push(e);st.evd=Object.assign(this.evDraft(),{t:e.t,k:e.k,a:e.a,b:e.b});this.dirty=true;this.renderSide();this.say('이벤트를 추가했어요.');return;}
     if(a==='delev'){st.evs.splice(+b.dataset.i,1);this.dirty=true;this.renderSide();return;}
-    if(a==='addnat'){if(st.nations.length<12){st.nations.push(this.newNation(st.nations.length));st.active=st.nations.length-1;this.dirty=true;this.renderSide();this.draw();}return;}
+    if(a==='addnat'){if(st.nations.length<this.tdef.filter(t=>!t.sea).length){st.nations.push(this.newNation(st.nations.length));st.active=st.nations.length-1;this.dirty=true;this.renderSide();this.draw();}return;}
     if(a==='delnat'){const i=+b.dataset.i;if(st.nations.length<=2)return;const go=()=>{
       st.owners=st.owners.map(o=>o===i?-1:(o>i?o-1:o));st.nations.splice(i,1);const nr={};Object.keys(st.rel).forEach(k=>{const [p,q]=k.split('-').map(Number);if(p===i||q===i)return;const np=p>i?p-1:p,nq=q>i?q-1:q;nr[this.key(np,nq)]=st.rel[k];});st.rel=nr;st.evs=(st.evs||[]).filter(e=>!((e.k!=='news'&&e.a===i)||(['war','peace','ally','cede'].includes(e.k)&&e.b===i))).map(e=>Object.assign({},e,{a:e.a>i?e.a-1:e.a,b:e.b>i?e.b-1:e.b}));st.evd=this.evDraft();st.active=Math.min(st.active,st.nations.length-1);this.dirty=true;this.renderSide();this.draw();};
       if(st.owners.some(o=>o===i))UI.ask('이 나라의 영토는 주인 없는 땅이 돼요. 삭제할까요?',go,{yes:'삭제'});else go();return;}
