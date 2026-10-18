@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 42</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 43</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -5022,6 +5022,7 @@ const UI={
     if(id==null){if(!C.pend)C.sel=null;UI.renderAll();return;}
     if(v.phase==='plan'&&C.sel!=null&&(v.terr[C.sel].owner===v.me||v.terr[C.sel].mygst>0)&&id!==C.sel){
       const used=C.orders.filter(o=>o.from===C.sel).reduce((s,o)=>s+o.n,0);const avail=(v.terr[C.sel].owner===v.me?v.terr[C.sel].troops:(v.terr[C.sel].mygst||0))-used;const allySea=v.terr[id].owner!=null&&v.terr[id].owner!==v.me&&v.treaties.some(x=>(x.type==='alliance'||x.type==='passage')&&((x.a===v.me&&x.b===v.terr[id].owner)||(x.b===v.me&&x.a===v.terr[id].owner)));const seaOpen=TDEF[id].kind==='sea'&&v.terr[id].owner!=null&&v.terr[id].owner!==v.me&&v.players[v.terr[id].owner]&&!v.players[v.terr[id].owner].hostile;const mv=v.terr[id].owner===v.me||allySea||seaOpen;
+      if(v.terr[id].owner===v.me&&v.terr[C.sel].owner===v.me){const adj0=adjAll(C.sel).includes(id);const hasGen0=v.gens.some(g=>g.owner===v.me&&g.status==='ok'&&g.loc===C.sel&&!C.orders.some(o=>o.gid===g.id));const can0=adj0?(avail>=CFG.minMove||hasGen0):(UI.farOwn(C.sel).includes(id)&&UI.availU(C.sel).c>=CFG.minMove);if(!can0){C.sel=id;C.pend=null;C.tab='map';UI.renderAll();return;}}
       if(mv&&v.terr[id].owner===v.me&&v.terr[C.sel].owner===v.me&&!adjAll(C.sel).includes(id)&&UI.farOwn(C.sel).includes(id)){const av0=UI.availU(C.sel);if(av0.c<CFG.minMove){UI.toast('두 칸 떨어진 내 영토로는 기병만 보낼 수 있어요. 이 지역에 기병이 없어요.','bad');return;}C.pend={from:C.sel,to:id,n:null,gid:null,mv:true,far:true};C.tab='map';UI.renderAll();return;}
       if(!mv&&C.tplId&&v.terr[id].owner!=null&&v.treaties.some(x=>x.type==='alliance'&&((x.a===v.me&&x.b===v.terr[id].owner)||(x.b===v.me&&x.a===v.terr[id].owner)))){UI.toast('동맹국은 공격할 수 없어요. (동맹을 해제하면 가능해요)','bad');return;}
       {const ow=v.terr[id].owner;if(!mv&&ow!=null&&ow!==v.me&&v.players[ow]&&!v.players[ow].hostile){UI.toast(`${v.players[ow].kingdom.split('(')[0]}에 선전포고해야 공격할 수 있어요. 외교 탭에서 선전포고하세요.`,'bad');return;}}
@@ -5032,6 +5033,7 @@ const UI={
       if(mv?(avail<CFG.minMove&&!hasGen):avail<CFG.minAttack){UI.toast('출발 지역에 보낼 병력이 부족합니다.','bad');return;}
       C.pend={from:C.sel,to:id,n:null,gid:null,mv};C.tab='map';UI.renderAll();return;}
     if(v.phase==='plan'&&id===C.sel&&!C.pend){C.sel=null;UI.renderAll();return;}
+    if(v.phase==='plan'&&C.sel!=null&&v.terr[C.sel]&&v.terr[C.sel].owner!==v.me&&!(v.terr[C.sel].mygst>0)){C.sel=null;C.pend=null;UI.renderAll();return;}
     C.sel=id;C.pend=null;C.tab='map';UI.renderAll();},
   onReady(){const v=C.view;if(!v||C.animating||v.phase!=='plan')return;const me=mePl();if(!me.ready)UI.sendOrders();Net.send({t:'ready',v:!me.ready});},
   sendOrders(){Net.send({t:'orders',orders:C.orders});},
