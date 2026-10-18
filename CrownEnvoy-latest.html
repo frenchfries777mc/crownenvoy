@@ -260,7 +260,7 @@ input[type=checkbox]{accent-color:var(--gold)}
 .edhead{display:flex;gap:10px;align-items:center}
 .ednat{display:flex;gap:6px;align-items:center;padding:5px 6px;border:1px solid #2c3d5e;border-radius:8px;margin-bottom:5px;background:#0f1a2c}.ednat.on{border-color:#ffd45e;background:#1a2640}
 .ednat input[type=color]{width:26px;height:26px;padding:0;border:0;background:none;flex:none}.ednat input.nm{flex:1;min-width:0}.ednat .cnt{font-size:12px;color:#9fb3d4;flex:none;width:34px;text-align:right}
-.ednat .btn{padding:2px 7px}
+.ednat .btn{padding:2px 7px}.edgen{border:1px solid #2c3d5e;border-radius:8px;padding:5px 6px;margin-bottom:5px;background:#0f1a2c}.edgn{display:flex;gap:6px}.edgn input{flex:1;min-width:0}.edgs{display:flex;gap:5px;align-items:center;margin-top:4px;font-size:12px;color:#9fb3d4}.edgs span{white-space:nowrap;width:auto}.edgs select{min-width:0;flex:none;width:auto!important;padding:3px 4px}.edgs select[data-edgf=t],.edgs select[data-edgf=p]{flex:1 1 0;width:0!important}
 .edtools{display:flex;gap:6px;flex-wrap:wrap}.edtools .btn.on{background:#7a5a22;border-color:#ffd45e;color:#fff}
 #cuOv{position:fixed;inset:0;background:#000b;z-index:99970;display:flex;align-items:center;justify-content:center;padding:14px}#cuOv .ab{background:#0e182b;border:1px solid #c9a24a;border-radius:12px;padding:16px;width:min(94vw,520px);max-height:86vh;overflow:auto;color:#eef1f7}#cuOv h2{margin:0;font-size:19px}#cuOv .ah{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#cuOv .x{background:none;border:0;color:#9fb0c8;font-size:16px;cursor:pointer}#cuOv .mu{color:#c3cede;font-size:13px;margin:6px 0}#cuOv .dgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}#cuOv .dg{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 6px;border-radius:8px;background:#13213a;border:1.5px solid #2a3a58;text-align:center;font-size:13px}#cuOv .dg.y{border-color:#4f9a62}#cuOv .dg.n{border-color:#b04a3a}#cuOv .dg .fl{width:40px;height:40px;border-width:2px}#cuOv .dg small{color:#9fb0c8}#cuOv .row2{display:flex;gap:10px;margin-top:6px}#cuOv .row2 .btn{flex:1;padding:10px}
 #shOv{position:fixed;inset:0;background:#000b;z-index:99980;display:flex;align-items:center;justify-content:center;padding:14px}#shOv .ab{background:#0e182b;border:1px solid #c9a24a;border-radius:12px;padding:16px;width:min(94vw,520px);max-height:86vh;overflow:auto;color:#eef1f7}#shOv h2{margin:0;font-size:19px}#shOv .ah{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}#shOv .x{background:none;border:0;color:#9fb0c8;font-size:16px;cursor:pointer}#shOv .mu{color:#9fb0c8;font-size:12px;margin:6px 0}#shOv .sr{padding:8px 10px;border-radius:8px;background:#13213a;margin:6px 0}#shOv .sr .t{font-weight:700}#shOv .sr .d{color:#c3cede;font-size:12.5px;margin:3px 0}#shOv .sr .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}#shOv .sr .row small{color:#9fb0c8;flex:1;min-width:120px}#shOv .tb{display:flex;gap:6px;margin:6px 0}#shOv .tb .on{border-color:#c9a24a;color:#ffe08a}
@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 53</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 54</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -681,7 +681,7 @@ function mergeMapData(m){
 function remapTpl(t){const m=t&&MAPDATA[t.map];if(!m||!m.o2n||t.mrev===MREV)return t;const o=m.o2n,n=m.terr.length,mem=m.mem;
   if(!Array.isArray(t.owner)||t.owner.length!==o.length){t.mrev=MREV;return t;}
   const no=new Array(n).fill(-1);mem.forEach((mm,ni)=>{const w={};mm.forEach(x=>{const ow=t.owner[x];w[ow]=(w[ow]||0)+m.oarea[x]+0.01;});let b=-1,bv=-1;Object.keys(w).forEach(k=>{if(w[k]>bv){bv=w[k];b=+k;}});no[ni]=b;});
-  t.owner=no;(t.nations||[]).forEach((nt,ni)=>{if(Number.isInteger(nt.cap))nt.cap=o[nt.cap];nt.count=no.filter(x=>x===ni).length||nt.count;});
+  t.owner=no;(t.nations||[]).forEach((nt,ni)=>{if(Number.isInteger(nt.cap))nt.cap=o[nt.cap];(nt.gens||[]).forEach(g=>{if(Number.isInteger(g.p))g.p=o[g.p];});nt.count=no.filter(x=>x===ni).length||nt.count;});
   const mp=a=>Array.isArray(a)?[...new Set(a.map(x=>o[x]))]:a;
   if(t.sites)Object.keys(t.sites).forEach(k=>{if(Number.isInteger(t.sites[k]))t.sites[k]=o[t.sites[k]];});
   if(t.civil)t.civil=mp(t.civil);if(t.aiBar&&t.aiBar.regions)t.aiBar.regions=mp(t.aiBar.regions);
@@ -909,7 +909,7 @@ function pickNationBot(tpl,taken){const free=tpl.nations.map((n,i)=>i).filter(i=
 /* 나라마다 정해진 12명의 남자 이름에서 무작위로 뽑는다. 13번째 장군부터는 동명이인이 된다 */
 function nameFor(pid){const p=G.players[pid];const pool=CULT[p.cult]||CULT.mix;p.namesUsed=p.namesUsed||[];const mine=new Set(G.gens.filter(g=>g.owner===pid).map(g=>g.name));const free=pool.filter(n=>!p.namesUsed.includes(n)&&!mine.has(n));const nm=pick(free.length?free:pool);p.namesUsed.push(nm);return nm;}
 function startGens(i,plan){const nt=plan&&plan.nations&&plan.nations[i];const out=[];
-  if(nt&&nt.gens&&nt.gens.length){const rv=(v,fx)=>fx?v:clamp(v+ri(-1,1),1,5);nt.gens.forEach(x=>{out.push({name:x.n==='@'?nameFor(i):x.n,atk:rv(x.a,x.fx),def:rv(x.d,x.fx),lead:rv(x.l,x.fx),trait:x.t||pick(TRAIT_POOL)});});return out;}
+  if(nt&&nt.gens&&nt.gens.length){const rv=(v,fx)=>fx?v:clamp(v+ri(-1,1),1,5);nt.gens.forEach(x=>{out.push({name:x.n==='@'?nameFor(i):x.n,atk:rv(x.a,x.fx),def:rv(x.d,x.fx),lead:rv(x.l,x.fx),trait:x.t||pick(TRAIT_POOL),loc:Number.isInteger(x.p)?x.p:null});});return out;}
   const ks=TRAIT_POOL;for(let k=0;k<2;k++)out.push({name:nameFor(i),atk:ri(2,5),def:ri(2,5),lead:ri(2,5),trait:pick(ks)});return out;}
 function newGame(defs,plan){if(typeof Host!=='undefined')Host.snaps=[];ctName(plan&&plan.tpl);
   applyUnit(10);CFG.maxGens=plan&&plan.tpl?8:4;resetMap();plan=plan||autoPlan(defs.length);const n=plan.caps.length;plan.caps.forEach(t=>{TDEF[t].kind='cap';});
@@ -919,7 +919,7 @@ function newGame(defs,plan){if(typeof Host!=='undefined')Host.snaps=[];ctName(pl
       stab:70,fat:0,morale:60,trust:80,vp:0,alive:true,ready:false,scouts:{},fought:false,lost:0,cap:plan.caps[i],aggr:(nt&&nt.neu)?rnd(1.6,2.0):rnd(0.9,1.25),landless:!!(nt&&nt.landless),reinf:(nt&&nt.reinf)||null,tech:{done:startTech(plan.tpl?TEMPLATES.find(t=>t.id===plan.tpl):null,nt&&nt.tech,nt&&nt.era),cur:null,pool:0},ut:{i:0,c:0,a:0},stat:{fought:0,won:0,killed:0,lost:0,capt:0,lostT:0,wars:0,goals:0},goals:[],mAdjs:[]});G.pol[i]={conscript:0,garrison:0,treaty:0};if(d.persona&&PERSONA[d.persona])G.players[i].fixPers=d.persona;}
   const cntR={};plan.owner.forEach((o,i)=>{if(o>=0&&TDEF[i]&&!TDEF[i].sea)cntR[o]=(cntR[o]||0)+1;});const szm=o=>plan.tpl?Math.min(1,0.25+0.75*Math.pow((cntR[o]||1)/12,0.7)):1;
   TDEF.forEach(td=>{const o0=plan.owner[td.id];const o=(td.sea||o0==null)?-1:o0;const k=KIND[td.kind];G.terr.push({id:td.id,sea:!!td.sea,home:o>=0?o:null,owner:o>=0?o:null,troops:td.sea?0:o<0?(k.gar||300*UN):Math.round((td.kind==='cap'?CFG.startCap:CFG.startOther)*(((plan.nations&&plan.nations[o])||{}).trp||1)*szm(o)/10)*10,fort:td.kind==='cap'?1:0,trench:0,unrest:0});});
-  for(let i=0;i<n;i++){const gs=startGens(i,plan);const mine=TDEF.filter(t=>plan.owner[t.id]===i&&t.id!==plan.caps[i]).map(t=>t.id);gs.forEach((g,j)=>G.gens.push({id:G.uid++,owner:i,name:g.name,atk:g.atk,def:g.def,lead:g.lead,trait:g.trait,loc:(j===0||!mine.length)?plan.caps[i]:mine[(j*5)%mine.length],status:'ok',captor:null}));}
+  for(let i=0;i<n;i++){const gs=startGens(i,plan);const mine=TDEF.filter(t=>plan.owner[t.id]===i&&t.id!==plan.caps[i]).map(t=>t.id);gs.forEach((g,j)=>G.gens.push({id:G.uid++,owner:i,name:g.name,atk:g.atk,def:g.def,lead:g.lead,trait:g.trait,loc:(g.loc!=null&&TDEF[g.loc]&&!TDEF[g.loc].sea&&plan.owner[g.loc]===i)?g.loc:(j===0||!mine.length)?plan.caps[i]:mine[(j*5)%mine.length],status:'ok',captor:null}));}
   G.hostile={};G.wounded=[];G.tplId=plan.tpl||null;G.start=plan.start||null;G.cevs=plan.evs||[];G.pendNews=[];G.trenchOK=['1914','1939','korea'].includes(TK(plan.tpl));
   (plan.war||[]).forEach(([a,b])=>{G.hostile[a<b?a+'-'+b:b+'-'+a]=1;});
   (plan.al||[]).forEach(([a,b])=>G.treaties.push({id:G.uid++,type:'alliance',a,b,until:G.round+1e6,secret:false}));
@@ -4305,6 +4305,17 @@ const Ed={
   injectSaved(){this.loadAll().forEach(t=>{if(t&&t.id&&MAPDATA[t.map]&&!TEMPLATES.some(x=>x.id===t.id))TEMPLATES.push(t);});},
   /* 색이 모자라면 황금각으로 새 색을 만든다 (나라 수 제한 없음) */
   natColor(i){if(i<this.COLORS.length)return this.COLORS[i];const h=(i*137.508)%360,l=0.42+0.1*(i%3),s_=0.55+0.12*((i>>1)%3),a=s_*Math.min(l,1-l),f=n=>{const k=(n+h/30)%12,c=l-a*Math.max(-1,Math.min(k-3,9-k,1));return Math.round(255*c).toString(16).padStart(2,'0');};return '#'+f(0)+f(8)+f(4);},
+  /* ---- 장군 ---- */
+  GMAX:8,
+  gensOut(n,oi){const g=(n.gens||[]).slice(0,this.GMAX);if(!g.length)return null;const own=k=>Number.isInteger(k)&&this.tdef[k]&&!this.tdef[k].sea&&this.st.owners[k]===oi;
+    return g.map(x=>{const nm=String(x.n||'').replace(/[<>&"]/g,'').trim().slice(0,16);const c=v=>clamp(Math.round(+v)||3,1,8);const o={n:nm||'@',a:c(x.a),d:c(x.d),l:c(x.l),fx:1};if(x.t&&TRAITS[x.t])o.t=x.t;if(own(x.p))o.p=x.p;return o;});},
+  genPanel(act,ai){const st=this.st,gs=act.gens||[];const own=st.owners.map((o,k)=>o===ai&&this.tdef[k]&&!this.tdef[k].sea?k:-1).filter(k=>k>=0);
+    const num=(f,v,i)=>`<select data-edgf="${f}" data-edgi="${i}" title="${({a:'공격',d:'방어',l:'통솔'})[f]}">${[1,2,3,4,5,6,7,8].map(q=>`<option value="${q}" ${q===v?'selected':''}>${q}</option>`).join('')}</select>`;
+    const rows=gs.map((g,i)=>`<div class="edgen"><div class="edgn"><input type="text" maxlength="16" placeholder="이름 (비우면 자동)" value="${esc(g.n)}" data-edgf="n" data-edgi="${i}"><button class="btn sm danger" data-ed="delgen" data-i="${i}" title="이 장군 삭제">🗑</button></div>
+      <div class="edgs"><span>공격</span>${num('a',g.a,i)}<span>방어</span>${num('d',g.d,i)}<span>통솔</span>${num('l',g.l,i)}</div>
+      <div class="edgs"><select data-edgf="t" data-edgi="${i}"><option value="">특성: 자동</option>${Object.keys(TRAITS).map(k=>`<option value="${k}" ${g.t===k?'selected':''}>${TRAITS[k]}</option>`).join('')}</select>
+      <select data-edgf="p" data-edgi="${i}"><option value="">주둔: 자동</option>${own.map(k=>`<option value="${k}" ${g.p===k?'selected':''}>${esc(this.tdef[k].name)}</option>`).join('')}</select></div></div>`).join('');
+    return `<h4 style="margin:10px 0 4px">장군 <span class="muted sm" style="font-weight:400">(${gs.length}/${this.GMAX}) — 하나도 안 만들면 게임이 알아서 정해요</span></h4>${rows}<button class="btn sm" data-ed="addgen" ${gs.length>=this.GMAX?'disabled':''}>+ 장군 추가</button>`;},
   newNation(i){return {name:'나라 '+(i+1),color:this.natColor(i),neu:false,str:1,cap:null,gov:'',fai:''};},
   EVK:[['war','선전포고'],['peace','휴전'],['ally','동맹'],['revolt','반란'],['gold','금화'],['cede','영토 양도'],['news','소식']],
   /* ---- 영토별 설정: 도시 단계(-1=자동)·요새 단계·건물 ---- */
@@ -4321,7 +4332,7 @@ const Ed={
     const L={war:()=>`${nm(e.a)} → ${nm(e.b)} 선전포고`,peace:()=>`${nm(e.a)} · ${nm(e.b)} 휴전`,ally:()=>`${nm(e.a)} · ${nm(e.b)} 동맹`,revolt:()=>`${nm(e.a)} 반란 (${Math.max(1,Math.min(5,n||1))}곳)`,gold:()=>`${nm(e.a)} 금화 ${n>0?'+':''}${n}`,cede:()=>`${nm(e.a)} → ${nm(e.b)} ${esc((this.tdef[e.r]||{}).name||'?')} 양도`,news:()=>`소식: ${esc(e.txt||'')}`};return (L[e.k]||L.news)();},
   fresh(mapId){const m=mapBuild(mapId);return {id:null,mapId,name:'',desc:'',owners:m.tdef.map(()=>-1),nations:[this.newNation(0),this.newNation(1)],year:'',month:1,evs:[],evd:this.evDraft(),rel:{},active:0,tool:'paint',defs:{},sel:null};},
   /* 저장된 템플릿을 편집 상태로 되돌린다 */
-  fromTpl(t){const m=mapBuild(t.map);const st={id:t.id,mapId:t.map,name:t.name||'',desc:t.desc||'',owners:m.tdef.map((_,i)=>t.owner[i]!=null?t.owner[i]:-1),nations:t.nations.map(n=>({name:n.name,color:n.color,neu:!!n.neu,str:n.str||1,cap:n.cap,gov:n.gov||'',fai:n.fai||'',flag:n.flag||'',diff:n.diff!=null?n.diff:2})),year:t.year||'',month:t.month||1,evs:(t.evs||[]).map(e=>Object.assign({},e)),evd:this.evDraft(),rel:{},active:0,tool:'paint',defs:this.defsFrom(t),sel:null};
+  fromTpl(t){const m=mapBuild(t.map);const st={id:t.id,mapId:t.map,name:t.name||'',desc:t.desc||'',owners:m.tdef.map((_,i)=>t.owner[i]!=null?t.owner[i]:-1),nations:t.nations.map(n=>({name:n.name,color:n.color,neu:!!n.neu,str:n.str||1,cap:n.cap,gov:n.gov||'',fai:n.fai||'',flag:n.flag||'',diff:n.diff!=null?n.diff:2,gens:(n.gens||[]).map(x=>({n:x.n==='@'?'':String(x.n||''),a:x.a|0||3,d:x.d|0||3,l:x.l|0||3,t:x.t||'',p:Number.isInteger(x.p)?x.p:null}))})),year:t.year||'',month:t.month||1,evs:(t.evs||[]).map(e=>Object.assign({},e)),evd:this.evDraft(),rel:{},active:0,tool:'paint',defs:this.defsFrom(t),sel:null};
     const put=(l,v)=>(l||[]).forEach(([a,b])=>{st.rel[this.key(a,b)]=v;});put(t.al,'al');put(t.nap,'nap');put(t.war,'war');
     (t.vas||[]).forEach(([o,v])=>{st.rel[this.key(o,v)]=o<v?'vlo':'vhi';});return st;},
   key(a,b){return a<b?a+'-'+b:b+'-'+a;},
@@ -4420,7 +4431,8 @@ const Ed={
         <div class="edrel"><span>국기</span><select data-edflag="1"><option value="">자동 (나라 색)</option>${this.flagOpts().map(([k,nm])=>`<option value="${k}" ${act.flag===k?'selected':''}>${esc(nm)}</option>`).join('')}</select><span class="fl" style='width:28px;height:19px;flex:none;background-size:cover;background-image:${flagURI(act.flag||null,act.color,0)}'></span></div>
         <label style="display:flex;gap:6px;align-items:center;margin:2px 0"><input type="checkbox" data-edneu="1" ${act.neu?'checked':''}> 중립 성향 (먼저 공격하지 않아요)</label>
         <div class="edrel"><span>정치체제</span><select data-edgov="1"><option value="">자동</option>${Object.keys(GOV).map(k=>`<option value="${k}" ${act.gov===k?'selected':''}>${GOV[k].n}</option>`).join('')}</select></div>
-        <div class="edrel"><span>종교</span><select data-edfai="1"><option value="">자동</option>${Object.keys(FAITH).map(k=>`<option value="${k}" ${act.fai===k?'selected':''}>${FAITH[k].n}</option>`).join('')}</select></div></div>`:''}
+        <div class="edrel"><span>종교</span><select data-edfai="1"><option value="">자동</option>${Object.keys(FAITH).map(k=>`<option value="${k}" ${act.fai===k?'selected':''}>${FAITH[k].n}</option>`).join('')}</select></div>
+        ${this.genPanel(act,st.active)}</div>`:''}
       <h3>도구</h3><div class="edtools">${[['paint','🖌 칠하기'],['erase','🧽 지우기'],['cap','⭐ 수도 지정'],['build','🏗 도시·요새·건물'],['move','✋ 이동']].map(([k,l])=>`<button class="btn sm ${st.tool===k?'on':''}" data-edtool="${k}">${l}</button>`).join('')}</div>
       <div class="muted sm" style="margin-top:4px">칠하기·지우기는 드래그로 이어서 칠할 수 있어요. 휠로 확대·축소, 오른쪽 버튼(또는 ✋ 이동)으로 움직여요.</div>
       ${st.tool==='build'?this.defPanel():''}
@@ -4449,8 +4461,8 @@ const Ed={
       if(b.dataset.edtool){this.st.tool=b.dataset.edtool;this.renderSide();return;}
       if(b.dataset.ed){this.act(b.dataset.ed,b);return;}
       if(b.dataset.nat!=null&&!e.target.closest('input,button')){this.st.active=+b.dataset.nat;this.renderSide();this.draw();}};
-    root.oninput=e=>{const t=e.target;if(t.dataset.edname!=null){this.st.nations[+t.dataset.edname].name=t.value;this.dirty=true;}else if(t.dataset.edcolor!=null){this.st.nations[+t.dataset.edcolor].color=t.value;this.dirty=true;this.draw();}else if(t.id==='edName'){this.st.name=t.value;this.dirty=true;}else if(t.id==='edDesc'){this.st.desc=t.value;this.dirty=true;}else if(t.id==='edYear'){this.st.year=t.value;this.dirty=true;}else if(t.id==='evT'){this.st.evd.t=t.value;}else if(t.id==='evN'){this.st.evd.n=t.value;}else if(t.id==='evTxt'){this.st.evd.txt=t.value;}};
-    root.onchange=e=>{const t=e.target;if(t.dataset.edrel!=null){const a=this.st.active,j=+t.dataset.edrel,k=this.key(a,j);let v=t.value;if(v==='vsof'||v==='vsto'){const ov=v==='vsof'?a:j;v=ov===Math.min(a,j)?'vlo':'vhi';}if(v)this.st.rel[k]=v;else delete this.st.rel[k];this.dirty=true;this.renderSide();}
+    root.oninput=e=>{const t=e.target;if(t.dataset.edgf==='n'){const g=(this.st.nations[this.st.active].gens||[])[+t.dataset.edgi];if(g){g.n=t.value;this.dirty=true;}}else if(t.dataset.edname!=null){this.st.nations[+t.dataset.edname].name=t.value;this.dirty=true;}else if(t.dataset.edcolor!=null){this.st.nations[+t.dataset.edcolor].color=t.value;this.dirty=true;this.draw();}else if(t.id==='edName'){this.st.name=t.value;this.dirty=true;}else if(t.id==='edDesc'){this.st.desc=t.value;this.dirty=true;}else if(t.id==='edYear'){this.st.year=t.value;this.dirty=true;}else if(t.id==='evT'){this.st.evd.t=t.value;}else if(t.id==='evN'){this.st.evd.n=t.value;}else if(t.id==='evTxt'){this.st.evd.txt=t.value;}};
+    root.onchange=e=>{const t=e.target;if(t.dataset.edgf&&t.dataset.edgf!=='n'){const g=(this.st.nations[this.st.active].gens||[])[+t.dataset.edgi],f=t.dataset.edgf;if(g){g[f]=(f==='t')?t.value:(f==='p'?(t.value===''?null:+t.value):+t.value);this.dirty=true;}}else if(t.dataset.edrel!=null){const a=this.st.active,j=+t.dataset.edrel,k=this.key(a,j);let v=t.value;if(v==='vsof'||v==='vsto'){const ov=v==='vsof'?a:j;v=ov===Math.min(a,j)?'vlo':'vhi';}if(v)this.st.rel[k]=v;else delete this.st.rel[k];this.dirty=true;this.renderSide();}
       else if(t.id==='edMonth'){this.st.month=+t.value;this.dirty=true;}
       else if(t.id==='evK'){this.st.evd.k=t.value;if(t.value==='revolt')this.st.evd.n=1;else if(t.value==='gold')this.st.evd.n=200;this.renderSide();}
       else if(t.id==='evA'){this.st.evd.a=+t.value;if(this.st.evd.k==='cede')this.renderSide();}else if(t.id==='evB'){this.st.evd.b=+t.value;}else if(t.id==='evR'){this.st.evd.r=+t.value;}
@@ -4512,6 +4524,8 @@ const Ed={
     if(a==='delnat'){const i=+b.dataset.i;if(st.nations.length<=2)return;const go=()=>{
       st.owners=st.owners.map(o=>o===i?-1:(o>i?o-1:o));st.nations.splice(i,1);const nr={};Object.keys(st.rel).forEach(k=>{const [p,q]=k.split('-').map(Number);if(p===i||q===i)return;const np=p>i?p-1:p,nq=q>i?q-1:q;nr[this.key(np,nq)]=st.rel[k];});st.rel=nr;st.evs=(st.evs||[]).filter(e=>!((e.k!=='news'&&e.a===i)||(['war','peace','ally','cede'].includes(e.k)&&e.b===i))).map(e=>Object.assign({},e,{a:e.a>i?e.a-1:e.a,b:e.b>i?e.b-1:e.b}));st.evd=this.evDraft();st.active=Math.min(st.active,st.nations.length-1);this.dirty=true;this.renderSide();this.draw();};
       if(st.owners.some(o=>o===i))UI.ask('이 나라의 영토는 주인 없는 땅이 돼요. 삭제할까요?',go,{yes:'삭제'});else go();return;}
+    if(a==='addgen'){const n=st.nations[st.active];n.gens=n.gens||[];if(n.gens.length>=this.GMAX)return;n.gens.push({n:'',a:3,d:3,l:3,t:'',p:null});this.dirty=true;this.renderSide();return;}
+    if(a==='delgen'){const n=st.nations[st.active];(n.gens||[]).splice(+b.dataset.i,1);this.dirty=true;this.renderSide();return;}
     if(a==='defreset'){if(st.sel!=null&&st.defs[st.sel]){delete st.defs[st.sel];this.dirty=true;this.renderSide();this.draw();}return;}
     if(a==='zin')return this.zoomAt(this.cv.clientWidth/2,this.cv.clientHeight/2,1.3);
     if(a==='zout')return this.zoomAt(this.cv.clientWidth/2,this.cv.clientHeight/2,1/1.3);
@@ -4533,7 +4547,7 @@ const Ed={
     if(keep.length<2)return {ok:false,err:'영토가 있는 나라가 2개 이상 필요해요. 지도에 나라를 칠하세요.'};
     const idx={};keep.forEach((oi,ni)=>idx[oi]=ni);
     const nations=keep.map(oi=>{const n=st.nations[oi],r=regs(oi);const cap=(n.cap!=null&&st.owners[n.cap]===oi)?n.cap:r.slice().sort((a,b)=>this.tdef[b].area-this.tdef[a].area)[0];
-      return {k:'c'+idx[oi],name:(n.name||'나라').trim()||'나라',color:n.color,cap,gov:GOV[n.gov]?n.gov:null,fai:FAITH[n.fai]?n.fai:null,neu:n.neu?1:0,count:r.length,inc:1,navy:1,flag:(n.flag&&typeof FLAGS!=='undefined'&&FLAGS[n.flag])?n.flag:null,diff:n.diff!=null?clamp(+n.diff|0,0,4):2,cult:'mix',gens:null,army:null,trp:1,str:n.str,_s:r.length*100*n.str};});
+      return {k:'c'+idx[oi],name:(n.name||'나라').trim()||'나라',color:n.color,cap,gov:GOV[n.gov]?n.gov:null,fai:FAITH[n.fai]?n.fai:null,neu:n.neu?1:0,count:r.length,inc:1,navy:1,flag:(n.flag&&typeof FLAGS!=='undefined'&&FLAGS[n.flag])?n.flag:null,diff:n.diff!=null?clamp(+n.diff|0,0,4):2,cult:'mix',gens:this.gensOut(n,oi),army:null,trp:1,str:n.str,_s:r.length*100*n.str};});
     const base=n=>(n.count-1)*2000+4800;const ref=nations.reduce((a,n)=>(!a||n._s>a._s)?n:a,null);const K=base(ref)/ref._s;
     nations.forEach(n=>{n.army=n._s;n.trp=Math.max(0.25,Math.min(8,+(n._s*K/base(n)).toFixed(2)));delete n._s;});
     const owner=this.tdef.map((_,i)=>st.owners[i]>=0&&idx[st.owners[i]]!=null?idx[st.owners[i]]:-1);
