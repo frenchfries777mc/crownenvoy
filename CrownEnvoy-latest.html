@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 48</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 49</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -692,9 +692,9 @@ function remapTpl(t){const m=t&&MAPDATA[t.map];if(!m||!m.o2n||t.mrev===MREV)retu
 TEMPLATES.forEach(remapTpl);
 /* ===== 콘스탄티노플: 보스포루스 해협에 요새 3단계의 작은 도시 영토를 따로 둔다 (옛 칸은 트라키아 '에디르네'로 돌려놓음) =====
    유럽·세계 지도 맨 끝 번호로 붙이므로, 이전에 저장한 시나리오는 padTpl로 한 칸 늘려 맞춘다. */
-const BOSP={0:{c:[614,386.9],r:1.4,sea:[270]},2:{c:[561.3,192.5],r:0.6,sea:[805,802]}},CITY_REV=1,BOSP_OLD={},BOSP_ID={};
+const BOSP={0:{c:[625.9,390.9],ring:[[625.636,390.157],[626.301,390.06],[626.736,390.085],[626.301,390.788],[625.945,391.396],[625.58,392.005],[625.523,391.306],[625.556,390.693]],sea:[270]},2:{c:[558.9,190.2],ring:[[557.789,188.905],[558.268,189.395],[559.094,190.17],[560.249,191.212],[559.712,191.18],[558.766,190.934],[558.305,190.712],[557.905,189.755]],sea:[805,802]}},CITY_REV=1,BOSP_OLD={},BOSP_ID={};
 Object.keys(BOSP).forEach(k=>{const m=MAPDATA[k],b=BOSP[k];if(!m||!m.terr)return;const th=m.terr.find(t=>t.name==='Edirne'),ku=m.terr.find(t=>t.name==='Kütahya');if(!th||!ku)return;
-  const n=m.terr.length;BOSP_OLD[k]=n;BOSP_ID[k]={id:n,th:th.id};const ring=[];for(let i=0;i<8;i++){const a=Math.PI/8+i*Math.PI/4;ring.push([+(b.c[0]+b.r*Math.cos(a)).toFixed(3),+(b.c[1]+b.r*Math.sin(a)).toFixed(3)]);}
+  const n=m.terr.length;BOSP_OLD[k]=n;BOSP_ID[k]={id:n,th:th.id};const ring=b.ring?b.ring.map(q=>q.slice()):[];if(!b.ring)for(let i=0;i<8;i++){const a=Math.PI/8+i*Math.PI/4;ring.push([+(b.c[0]+b.r*Math.cos(a)).toFixed(3),+(b.c[1]+b.r*Math.sin(a)).toFixed(3)]);}
   m.terr.push({id:n,name:'Istanbul',cc:'터키',cu:'mix',kind:'port',terrain:'plain',site:b.c.slice(),area:14,rings:[ring],fort0:3});
   m.adj.push([th.id,ku.id]);m.adj[th.id].push(n);m.adj[ku.id].push(n);
   if(m.sadj){m.sadj.push(b.sea.slice());b.sea.forEach(sv=>{if(m.sadj[sv])m.sadj[sv].push(n);});}});
