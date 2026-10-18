@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 49</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 50</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -4487,7 +4487,8 @@ const Ed={
   zoomAt(sx,sy,f){const v=this.view;const nz=Math.max(0.2,Math.min(80,v.z*f));const k=nz/v.z;v.x=sx-(sx-v.x)*k;v.y=sy-(sy-v.y)*k;v.z=nz;this.draw();},
   draw(){const cv=this.cv;if(!cv||!this.paths)return;const c=cv.getContext('2d');const st=this.st,{x,y,z}=this.view,d=this.dpr;
     c.setTransform(1,0,0,1,0,0);c.fillStyle='#0e2236';c.fillRect(0,0,cv.width,cv.height);c.setTransform(d*z,0,0,d*z,d*x,d*y);
-    this.paths.forEach((p,i)=>{const t=this.tdef[i];const o=st.owners[i];c.fillStyle=t.sea?'#16324d':(o>=0?st.nations[o].color:'#c9bd93');c.fill(p,'evenodd');c.strokeStyle=t.sea?'rgba(120,170,210,.25)':'rgba(20,16,8,.55)';c.lineWidth=(t.sea?0.5:0.7)/z;c.stroke(p);});
+    /* 바다를 먼저, 땅을 나중에 그린다 (게임 화면과 같은 순서). 번호 순서로 섞어 그리면 바다 칸이 땅 위를 덮는다 */
+    [true,false].forEach(sea=>this.paths.forEach((p,i)=>{const t=this.tdef[i];if(!!t.sea!==sea)return;const o=st.owners[i];c.fillStyle=t.sea?'#16324d':(o>=0?st.nations[o].color:'#c9bd93');c.fill(p,'evenodd');c.strokeStyle=t.sea?'rgba(120,170,210,.25)':'rgba(20,16,8,.55)';c.lineWidth=(t.sea?0.5:0.7)/z;c.stroke(p);}));
     st.nations.forEach((n,k)=>{if(n.cap!=null&&st.owners[n.cap]===k){const t=this.tdef[n.cap];c.fillStyle='#fff';c.strokeStyle='#000';c.lineWidth=1.2/z;c.beginPath();c.arc(t.x,t.y,5/z,0,6.3);c.fill();c.stroke();c.fillStyle='#000';c.font=`${9/z}px sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText('★',t.x,t.y+0.5/z);}});
     Object.keys(st.defs||{}).forEach(k=>{const t=this.tdef[k];if(!t)return;c.font=`${11/z}px sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillStyle='#fff';c.fillText('🏰',t.x,t.y);});
     if(st.tool==='build'&&st.sel!=null&&this.paths[st.sel]){c.strokeStyle='#fff';c.lineWidth=2.4/z;c.stroke(this.paths[st.sel]);}
