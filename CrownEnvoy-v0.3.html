@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 50</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 51</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -687,7 +687,7 @@ function remapTpl(t){const m=t&&MAPDATA[t.map];if(!m||!m.o2n||t.mrev===MREV)retu
   if(t.civil)t.civil=mp(t.civil);if(t.aiBar&&t.aiBar.regions)t.aiBar.regions=mp(t.aiBar.regions);
   if(t.vichy){['north','south'].forEach(k=>{if(t.vichy[k])t.vichy[k]=mp(t.vichy[k]);});['cap','paris'].forEach(k=>{if(Number.isInteger(t.vichy[k]))t.vichy[k]=o[t.vichy[k]];});}
   if(t.regionTroops){const r={};Object.keys(t.regionTroops).forEach(k=>{const z=o[k];r[z]=Math.max(r[z]||0,t.regionTroops[k]);});t.regionTroops=r;}
-  (t.guests||[]).forEach(g=>{if(Number.isInteger(g.region))g.region=o[g.region];});(t.regionDefs||[]).forEach(g=>{if(Number.isInteger(g.id))g.id=o[g.id];});
+  (t.guests||[]).forEach(g=>{if(Number.isInteger(g.region))g.region=o[g.region];});(t.regionDefs||[]).forEach(g=>{if(Number.isInteger(g.id))g.id=o[g.id];});(t.evs||[]).forEach(e=>{if(e.k==='cede'&&Number.isInteger(e.r))e.r=o[e.r];});
   t.mrev=MREV;return t;}
 TEMPLATES.forEach(remapTpl);
 /* ===== 콘스탄티노플: 보스포루스 해협에 요새 3단계의 작은 도시 영토를 따로 둔다 (옛 칸은 트라키아 '에디르네'로 돌려놓음) =====
@@ -903,7 +903,7 @@ function autoPlan(seats){const owner=TDEF.map(()=>-1),picks=[...Array(seats)].ma
 function tplPlan(tpl,picks){
   const order=[...picks];tpl.nations.forEach((_,i)=>{if(!order.includes(i))order.push(i);});
   const map=new Map(order.map((ni,pid)=>[ni,pid]));const pr=l=>l.map(([a,b])=>[map.get(a),map.get(b)]);
-  return {owner:tpl.owner.map(o=>o<0?-1:map.get(o)),caps:order.map(ni=>tpl.nations[ni].cap),nations:order.map(ni=>({name:tpl.nations[ni].name,color:tpl.nations[ni].color,neu:tpl.nations[ni].neu,inc:tpl.nations[ni].inc||1,navy:tpl.nations[ni].navy||1,k:tpl.nations[ni].k,flag:tpl.nations[ni].flag||null,trp:tpl.nations[ni].trp||1,cult:tpl.nations[ni].cult||'mix',gens:tpl.nations[ni].gens||null,landless:!!tpl.nations[ni].landless,reinf:tpl.nations[ni].reinf||null,tech:tpl.nations[ni].tech||null,era:tpl.nations[ni].era!=null?tpl.nations[ni].era:null,gov:tpl.nations[ni].gov||null,fai:tpl.nations[ni].fai||null,diff:tpl.nations[ni].diff!=null?tpl.nations[ni].diff:null})),evs:(tpl.evs||[]).map(e=>({t:+e.t,k:e.k,a:e.a!=null?map.get(e.a):null,b:e.b!=null?map.get(e.b):null,n:e.n||0,txt:e.txt||''})),al:pr(tpl.al),nap:pr(tpl.nap),war:pr(tpl.war),vas:pr(tpl.vas||[]),start:(tpl.custom&&tpl.year)?[tpl.year,tpl.month||1]:null,tpl:tpl.id};}
+  return {owner:tpl.owner.map(o=>o<0?-1:map.get(o)),caps:order.map(ni=>tpl.nations[ni].cap),nations:order.map(ni=>({name:tpl.nations[ni].name,color:tpl.nations[ni].color,neu:tpl.nations[ni].neu,inc:tpl.nations[ni].inc||1,navy:tpl.nations[ni].navy||1,k:tpl.nations[ni].k,flag:tpl.nations[ni].flag||null,trp:tpl.nations[ni].trp||1,cult:tpl.nations[ni].cult||'mix',gens:tpl.nations[ni].gens||null,landless:!!tpl.nations[ni].landless,reinf:tpl.nations[ni].reinf||null,tech:tpl.nations[ni].tech||null,era:tpl.nations[ni].era!=null?tpl.nations[ni].era:null,gov:tpl.nations[ni].gov||null,fai:tpl.nations[ni].fai||null,diff:tpl.nations[ni].diff!=null?tpl.nations[ni].diff:null})),evs:(tpl.evs||[]).map(e=>({t:+e.t,k:e.k,a:e.a!=null?map.get(e.a):null,b:e.b!=null?map.get(e.b):null,r:e.r!=null?e.r:null,n:e.n||0,txt:e.txt||''})),al:pr(tpl.al),nap:pr(tpl.nap),war:pr(tpl.war),vas:pr(tpl.vas||[]),start:(tpl.custom&&tpl.year)?[tpl.year,tpl.month||1]:null,tpl:tpl.id};}
 function pickNationBot(tpl,taken){const free=tpl.nations.map((n,i)=>i).filter(i=>!taken.includes(i)&&!tpl.nations[i].neu);const pool=free.length?free:tpl.nations.map((n,i)=>i).filter(i=>!taken.includes(i));
   const w=pool.map(i=>Math.sqrt(tpl.nations[i].count)+Math.random()*2);let b=0;w.forEach((x,k)=>{if(x>w[b])b=k;});return pool[b];}
 /* 나라마다 정해진 12명의 남자 이름에서 무작위로 뽑는다. 13번째 장군부터는 동명이인이 된다 */
@@ -2700,9 +2700,10 @@ function scenEvTick(){(G.pendNews||[]).forEach(n=>{(G.turnEvents=G.turnEvents||[
   else if(e.k==='ally'&&A&&B&&A.alive&&B.alive&&A.id!==B.id){if(isHostile(A.id,B.id))makeTruce(A.id,B.id);G.treaties=G.treaties.filter(t=>!((t.a===A.id&&t.b===B.id)||(t.a===B.id&&t.b===A.id)));G.treaties.push({id:G.uid++,type:'alliance',a:A.id,b:B.id,until:G.round+1e6,secret:false});head=`${snm(A.id)}와(과) ${snm(B.id)}이(가) 동맹을 맺었다`;}
   else if(e.k==='revolt'&&A&&A.alive){const n=Math.max(1,Math.min(5,Math.round(+e.n||1)));let c=0;for(let i=0;i<n;i++)if(revoltOne(A))c++;if(c)head=`${snm(A.id)}에서 반란이 일어났다`;}
   else if(e.k==='gold'&&A&&A.alive){const n=Math.max(-5000,Math.min(5000,Math.round(+e.n||0)));if(n){A.gold+=n;head=n>0?`${snm(A.id)}의 국고에 금화 ${n}이(가) 들어왔다`:`${snm(A.id)}이(가) 금화 ${-n}을(를) 잃었다`;}}
+  else if(e.k==='cede'&&A&&B&&A.alive&&B.alive&&A.id!==B.id&&Number.isInteger(e.r)){const T=G.terr[e.r];if(T&&!T.sea&&T.owner===A.id&&e.r!==A.cap){T.owner=B.id;T.occAt=null;T.unrest=0;head=`${snm(A.id)}이(가) ${TDEF[e.r].name}을(를) ${snm(B.id)}에 양도했다`;}}
   else if(e.k==='news'&&e.txt)head=String(e.txt).slice(0,80);
   if(!head)return;if(e.txt&&e.k!=='news'){body=head;head=String(e.txt).slice(0,80);}
-  log(head,'event');(G.turnEvents=G.turnEvents||[]).push({r:G.round,date:ymOf(G.round),head,body,scene:({war:'declaration',peace:'treaty',ally:'treaty',revolt:'revolution'})[e.k]||'meeting',ca:A?A.color:'#c9a24a',cb:B?B.color:(A?A.color:'#c9a24a'),pids:[A&&A.id,B&&B.id].filter(x=>x!=null)});});}
+  log(head,'event');(G.turnEvents=G.turnEvents||[]).push({r:G.round,date:ymOf(G.round),head,body,scene:({war:'declaration',peace:'treaty',ally:'treaty',cede:'treaty',revolt:'revolution'})[e.k]||'meeting',ca:A?A.color:'#c9a24a',cb:B?B.color:(A?A.color:'#c9a24a'),pids:[A&&A.id,B&&B.id].filter(x=>x!=null)});});}
 /* ---------- AI의 확장 행동 ---------- */
 /* 봇 성격별 추가 행동 (build 38) */
 function balPick(p,wars){const w=G.players.filter(q=>q.alive&&q.id!==p.id&&isHostile(p.id,q.id)).length,my=totalTroops(p.id),pool=[];
@@ -4303,7 +4304,7 @@ const Ed={
   saveAll(l){try{localStorage.setItem(this.KEY,JSON.stringify(l));return true;}catch(_){return false;}},
   injectSaved(){this.loadAll().forEach(t=>{if(t&&t.id&&MAPDATA[t.map]&&!TEMPLATES.some(x=>x.id===t.id))TEMPLATES.push(t);});},
   newNation(i){return {name:'나라 '+(i+1),color:this.COLORS[i%this.COLORS.length],neu:false,str:1,cap:null,gov:'',fai:''};},
-  EVK:[['war','선전포고'],['peace','휴전'],['ally','동맹'],['revolt','반란'],['gold','금화'],['news','소식']],
+  EVK:[['war','선전포고'],['peace','휴전'],['ally','동맹'],['revolt','반란'],['gold','금화'],['cede','영토 양도'],['news','소식']],
   /* ---- 영토별 설정: 도시 단계(-1=자동)·요새 단계·건물 ---- */
   defsFrom(t){const o={};(t.regionDefs||[]).forEach(d=>{if(!Number.isInteger(d.id)||!this.tdefOK(t.map,d.id))return;o[d.id]={city:Number.isInteger(d.city)?clamp(d.city,0,3):-1,fort:clamp(d.fort|0,0,3),bl:(d.bl||[]).filter(b=>BLD[b]).slice(0,4)};});return o;},
   tdefOK(map,id){const m=MAPDATA[map];return !!(m&&m.terr[id]&&m.terr[id].kind!=='sea');},
@@ -4311,9 +4312,11 @@ const Ed={
   setDef(i,patch){const st=this.st;const d=Object.assign({city:-1,fort:0,bl:[]},st.defs[i],patch);d.bl=[...new Set(d.bl)].filter(b=>BLD[b]);
     if(d.bl.length>this.slotsOf(d))d.bl=d.bl.slice(0,this.slotsOf(d));if(d.city<0&&!d.fort&&!d.bl.length)delete st.defs[i];else st.defs[i]=d;this.dirty=true;this.renderSide();this.draw();},
   defSum(i){const d=this.st.defs[i];if(!d)return '';const a=[];if(d.city>=0)a.push('도시 '+d.city+'단계');if(d.fort)a.push('요새 '+d.fort+'단계');if(d.bl.length)a.push(d.bl.map(b=>BLD[b].n).join('·'));return a.join(' · ');},
-  evDraft(){return {t:5,k:'war',a:0,b:1,n:1,txt:''};},
+  evDraft(){return {t:5,k:'war',a:0,b:1,r:null,n:1,txt:''};},
+  cedeList(a){const st=this.st,cap=st.nations[a]?st.nations[a].cap:null;return this.tdef.map((t,i)=>i).filter(i=>!this.tdef[i].sea&&st.owners[i]===+a&&i!==cap);},
+  cedeFix(){const ev=this.st.evd;if(ev.k!=='cede')return;const l=this.cedeList(ev.a);if(!l.includes(ev.r))ev.r=l.length?l[0]:null;},
   evLabel(e){const st=this.st,nm=i=>st.nations[i]?esc(st.nations[i].name):'?';const n=Math.round(+e.n||0);
-    const L={war:()=>`${nm(e.a)} → ${nm(e.b)} 선전포고`,peace:()=>`${nm(e.a)} · ${nm(e.b)} 휴전`,ally:()=>`${nm(e.a)} · ${nm(e.b)} 동맹`,revolt:()=>`${nm(e.a)} 반란 (${Math.max(1,Math.min(5,n||1))}곳)`,gold:()=>`${nm(e.a)} 금화 ${n>0?'+':''}${n}`,news:()=>`소식: ${esc(e.txt||'')}`};return (L[e.k]||L.news)();},
+    const L={war:()=>`${nm(e.a)} → ${nm(e.b)} 선전포고`,peace:()=>`${nm(e.a)} · ${nm(e.b)} 휴전`,ally:()=>`${nm(e.a)} · ${nm(e.b)} 동맹`,revolt:()=>`${nm(e.a)} 반란 (${Math.max(1,Math.min(5,n||1))}곳)`,gold:()=>`${nm(e.a)} 금화 ${n>0?'+':''}${n}`,cede:()=>`${nm(e.a)} → ${nm(e.b)} ${esc((this.tdef[e.r]||{}).name||'?')} 양도`,news:()=>`소식: ${esc(e.txt||'')}`};return (L[e.k]||L.news)();},
   fresh(mapId){const m=mapBuild(mapId);return {id:null,mapId,name:'',desc:'',owners:m.tdef.map(()=>-1),nations:[this.newNation(0),this.newNation(1)],year:'',month:1,evs:[],evd:this.evDraft(),rel:{},active:0,tool:'paint',defs:{},sel:null};},
   /* 저장된 템플릿을 편집 상태로 되돌린다 */
   fromTpl(t){const m=mapBuild(t.map);const st={id:t.id,mapId:t.map,name:t.name||'',desc:t.desc||'',owners:m.tdef.map((_,i)=>t.owner[i]!=null?t.owner[i]:-1),nations:t.nations.map(n=>({name:n.name,color:n.color,neu:!!n.neu,str:n.str||1,cap:n.cap,gov:n.gov||'',fai:n.fai||'',flag:n.flag||'',diff:n.diff!=null?n.diff:2})),year:t.year||'',month:t.month||1,evs:(t.evs||[]).map(e=>Object.assign({},e)),evd:this.evDraft(),rel:{},active:0,tool:'paint',defs:this.defsFrom(t),sel:null};
@@ -4389,13 +4392,14 @@ const Ed={
     const capName=act&&act.cap!=null&&st.owners[act.cap]===st.active?this.tdef[act.cap].name:null;
     const rels=st.nations.map((n,j)=>{if(j===st.active)return '';let v=st.rel[this.key(st.active,j)]||'';if(v==='vlo'||v==='vhi'){const ov=v==='vlo'?Math.min(st.active,j):Math.max(st.active,j);v=ov===st.active?'vsof':'vsto';}return `<div class="edrel"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${n.color};margin-right:6px"></i>${esc(n.name)}</span><select data-edrel="${j}">${this.REL.map(([k,l])=>`<option value="${k}" ${v===k?'selected':''}>${l}</option>`).join('')}</select></div>`;}).join('');
     const hasWar=Object.values(st.rel).includes('war');
-    st.evs=st.evs||[];const ev=st.evd=st.evd||this.evDraft();const two=['war','peace','ally'].includes(ev.k),one=ev.k!=='news';
+    st.evs=st.evs||[];const ev=st.evd=st.evd||this.evDraft();this.cedeFix();const two=['war','peace','ally','cede'].includes(ev.k),one=ev.k!=='news';
     const natOpt=(sel)=>st.nations.map((n,i)=>`<option value="${i}" ${+sel===i?'selected':''}>${esc(n.name)}</option>`).join('');
     const evList=st.evs.length?`<div class="edlist">${st.evs.slice().map((e,i)=>[e,i]).sort((x,y)=>x[0].t-y[0].t).map(([e,i])=>`<div class="row"><span><b>${e.t}턴</b> · ${this.evLabel(e)}${e.txt&&e.k!=='news'?` <small class="muted">“${esc(e.txt)}”</small>`:''}</span><button class="btn sm danger" data-ed="delev" data-i="${i}" aria-label="삭제">🗑</button></div>`).join('')}</div>`:'<div class="muted sm">아직 이벤트가 없어요.</div>';
     const evForm=`<div class="edevf"><div class="edrel"><span>턴</span><input type="number" id="evT" min="1" max="999" value="${ev.t}" style="width:96px"></div>
       <div class="edrel"><span>종류</span><select id="evK">${this.EVK.map(([k,l])=>`<option value="${k}" ${ev.k===k?'selected':''}>${l}</option>`).join('')}</select></div>
-      ${one?`<div class="edrel"><span>${two?(ev.k==='war'?'공격하는 나라':'나라 1'):'나라'}</span><select id="evA">${natOpt(ev.a)}</select></div>`:''}
-      ${two?`<div class="edrel"><span>${ev.k==='war'?'공격받는 나라':'나라 2'}</span><select id="evB">${natOpt(ev.b)}</select></div>`:''}
+      ${one?`<div class="edrel"><span>${two?(ev.k==='war'?'공격하는 나라':ev.k==='cede'?'양도하는 나라':'나라 1'):'나라'}</span><select id="evA">${natOpt(ev.a)}</select></div>`:''}
+      ${two?`<div class="edrel"><span>${ev.k==='war'?'공격받는 나라':ev.k==='cede'?'받는 나라':'나라 2'}</span><select id="evB">${natOpt(ev.b)}</select></div>`:''}
+      ${ev.k==='cede'?(()=>{const l=this.cedeList(ev.a);return l.length?`<div class="edrel"><span>양도할 영토</span><select id="evR">${l.map(i=>`<option value="${i}" ${ev.r===i?'selected':''}>${esc(this.tdef[i].name)}</option>`).join('')}</select></div>`:'<div class="muted sm">이 나라가 가진 영토가 없어요 (수도는 양도할 수 없어요).</div>';})():''}
       ${ev.k==='revolt'||ev.k==='gold'?`<div class="edrel"><span>${ev.k==='gold'?'금화 (−면 잃음)':'이탈 영토 수 (1~5)'}</span><input type="number" id="evN" value="${ev.n}" ${ev.k==='revolt'?'min="1" max="5"':'min="-5000" max="5000" step="10"'} style="width:96px"></div>`:''}
       <input type="text" id="evTxt" maxlength="80" value="${esc(ev.txt||'')}" placeholder="${ev.k==='news'?'소식 문구 (필수)':'신문 제목 (선택)'}" style="width:100%;margin:4px 0">
       <button class="btn sm" data-ed="addev">+ 이벤트 추가</button></div>`;
@@ -4447,7 +4451,7 @@ const Ed={
     root.onchange=e=>{const t=e.target;if(t.dataset.edrel!=null){const a=this.st.active,j=+t.dataset.edrel,k=this.key(a,j);let v=t.value;if(v==='vsof'||v==='vsto'){const ov=v==='vsof'?a:j;v=ov===Math.min(a,j)?'vlo':'vhi';}if(v)this.st.rel[k]=v;else delete this.st.rel[k];this.dirty=true;this.renderSide();}
       else if(t.id==='edMonth'){this.st.month=+t.value;this.dirty=true;}
       else if(t.id==='evK'){this.st.evd.k=t.value;if(t.value==='revolt')this.st.evd.n=1;else if(t.value==='gold')this.st.evd.n=200;this.renderSide();}
-      else if(t.id==='evA'){this.st.evd.a=+t.value;}else if(t.id==='evB'){this.st.evd.b=+t.value;}
+      else if(t.id==='evA'){this.st.evd.a=+t.value;if(this.st.evd.k==='cede')this.renderSide();}else if(t.id==='evB'){this.st.evd.b=+t.value;}else if(t.id==='evR'){this.st.evd.r=+t.value;}
       else if(t.dataset.edgov){this.st.nations[this.st.active].gov=t.value;this.dirty=true;}else if(t.dataset.edfai){this.st.nations[this.st.active].fai=t.value;this.dirty=true;}
       else if(t.dataset.eddiff){this.st.nations[this.st.active].diff=+t.value;this.dirty=true;}
       else if(t.dataset.edflag){this.st.nations[this.st.active].flag=t.value;this.dirty=true;this.renderSide();}
@@ -4499,12 +4503,12 @@ const Ed={
     if(a==='share'){this.share(b.dataset.id);return;}
     if(a==='browse'){this.browse('likes');return;}
     if(a==='addev'){const e=Object.assign({},st.evd);e.t=Math.round(+e.t);if(!(e.t>=1&&e.t<=999)){this.say('턴은 1~999 사이로 정하세요.',true);return;}
-      if(['war','peace','ally'].includes(e.k)&&+e.a===+e.b){this.say('서로 다른 두 나라를 고르세요.',true);return;}if(e.k==='news'&&!(e.txt||'').trim()){this.say('소식 문구를 입력하세요.',true);return;}
+      if(['war','peace','ally','cede'].includes(e.k)&&+e.a===+e.b){this.say('서로 다른 두 나라를 고르세요.',true);return;}if(e.k==='cede'&&!this.cedeList(e.a).includes(e.r)){this.say('양도할 영토를 고르세요. (수도는 양도할 수 없어요)',true);return;}if(e.k==='news'&&!(e.txt||'').trim()){this.say('소식 문구를 입력하세요.',true);return;}
       if(st.evs.length>=40){this.say('이벤트는 40개까지 넣을 수 있어요.',true);return;}e.a=+e.a;e.b=+e.b;e.n=Math.round(+e.n||0);e.txt=(e.txt||'').trim();st.evs.push(e);st.evd=Object.assign(this.evDraft(),{t:e.t,k:e.k,a:e.a,b:e.b});this.dirty=true;this.renderSide();this.say('이벤트를 추가했어요.');return;}
     if(a==='delev'){st.evs.splice(+b.dataset.i,1);this.dirty=true;this.renderSide();return;}
     if(a==='addnat'){if(st.nations.length<12){st.nations.push(this.newNation(st.nations.length));st.active=st.nations.length-1;this.dirty=true;this.renderSide();this.draw();}return;}
     if(a==='delnat'){const i=+b.dataset.i;if(st.nations.length<=2)return;const go=()=>{
-      st.owners=st.owners.map(o=>o===i?-1:(o>i?o-1:o));st.nations.splice(i,1);const nr={};Object.keys(st.rel).forEach(k=>{const [p,q]=k.split('-').map(Number);if(p===i||q===i)return;const np=p>i?p-1:p,nq=q>i?q-1:q;nr[this.key(np,nq)]=st.rel[k];});st.rel=nr;st.evs=(st.evs||[]).filter(e=>!((e.k!=='news'&&e.a===i)||(['war','peace','ally'].includes(e.k)&&e.b===i))).map(e=>Object.assign({},e,{a:e.a>i?e.a-1:e.a,b:e.b>i?e.b-1:e.b}));st.evd=this.evDraft();st.active=Math.min(st.active,st.nations.length-1);this.dirty=true;this.renderSide();this.draw();};
+      st.owners=st.owners.map(o=>o===i?-1:(o>i?o-1:o));st.nations.splice(i,1);const nr={};Object.keys(st.rel).forEach(k=>{const [p,q]=k.split('-').map(Number);if(p===i||q===i)return;const np=p>i?p-1:p,nq=q>i?q-1:q;nr[this.key(np,nq)]=st.rel[k];});st.rel=nr;st.evs=(st.evs||[]).filter(e=>!((e.k!=='news'&&e.a===i)||(['war','peace','ally','cede'].includes(e.k)&&e.b===i))).map(e=>Object.assign({},e,{a:e.a>i?e.a-1:e.a,b:e.b>i?e.b-1:e.b}));st.evd=this.evDraft();st.active=Math.min(st.active,st.nations.length-1);this.dirty=true;this.renderSide();this.draw();};
       if(st.owners.some(o=>o===i))UI.ask('이 나라의 영토는 주인 없는 땅이 돼요. 삭제할까요?',go,{yes:'삭제'});else go();return;}
     if(a==='defreset'){if(st.sel!=null&&st.defs[st.sel]){delete st.defs[st.sel];this.dirty=true;this.renderSide();this.draw();}return;}
     if(a==='zin')return this.zoomAt(this.cv.clientWidth/2,this.cv.clientHeight/2,1.3);
@@ -4532,7 +4536,7 @@ const Ed={
     nations.forEach(n=>{n.army=n._s;n.trp=Math.max(0.25,Math.min(8,+(n._s*K/base(n)).toFixed(2)));delete n._s;});
     const owner=this.tdef.map((_,i)=>st.owners[i]>=0&&idx[st.owners[i]]!=null?idx[st.owners[i]]:-1);
     const al=[],nap=[],war=[],vas=[];Object.keys(st.rel).forEach(k=>{const [a,b]=k.split('-').map(Number);if(idx[a]==null||idx[b]==null)return;const pr=[idx[a],idx[b]];const v=st.rel[k];if(v==='al')al.push(pr);else if(v==='nap')nap.push(pr);else if(v==='war')war.push(pr);else if(v==='vlo')vas.push(pr);else if(v==='vhi')vas.push([pr[1],pr[0]]);});
-    const evs=(st.evs||[]).filter(e=>e.k==='news'||(idx[e.a]!=null&&(!['war','peace','ally'].includes(e.k)||idx[e.b]!=null))).map(e=>({t:e.t,k:e.k,a:e.k==='news'?null:idx[e.a],b:['war','peace','ally'].includes(e.k)?idx[e.b]:null,n:e.n||0,txt:e.txt||''}));
+    const evs=(st.evs||[]).filter(e=>e.k==='news'||(idx[e.a]!=null&&(!['war','peace','ally','cede'].includes(e.k)||idx[e.b]!=null)&&(e.k!=='cede'||Number.isInteger(e.r)))).map(e=>({t:e.t,k:e.k,a:e.k==='news'?null:idx[e.a],b:['war','peace','ally','cede'].includes(e.k)?idx[e.b]:null,r:e.k==='cede'?e.r:null,n:e.n||0,txt:e.txt||''}));
     const yr=Math.round(+st.year)||0;if(yr&&(yr<-3000||yr>2100))return {ok:false,err:'시작 연도는 -3000~2100 사이로 정하세요.'};
     const regionDefs=Object.keys(st.defs||{}).filter(k=>this.tdefOK(st.mapId,+k)).map(k=>{const d=st.defs[k],r={id:+k,fort:d.fort|0,trench:0};if(d.city>=0)r.city=d.city;if(d.bl&&d.bl.length)r.bl=d.bl.slice();return r;});
     return {ok:true,tpl:{mrev:MREV,crev:CITY_REV,id:st.id||('cus_'+Date.now().toString(36)),year:yr,month:yr?(st.month||1):1,label:'내 시나리오',name,desc:(st.desc||'').trim()||'내가 만든 시나리오입니다.',map:st.mapId,civil:[],sites:{},nations,owner,al,nap,war,vas,evs,regionDefs,custom:true}};},
