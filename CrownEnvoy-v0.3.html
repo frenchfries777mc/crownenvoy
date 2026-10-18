@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 52</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 53</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -3667,7 +3667,7 @@ const MapView={cv:null,ctx:null,W:0,H:0,dpr:1,scale:1,ox:0,oy:0,hover:-1,deco:[]
       const sc=Math.max(0.3,e)/K;const col=T.owner!=null?pl[T.owner].color:'#8b8570';
       c.save();c.translate(td.x,td.y);c.scale(sc,sc);
       ICON[td.kind](c,0,-12,td.kind==='cap'?7.5:7,col);
-      if(e>=0.5){c.font="700 13px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.textAlign='center';c.textBaseline='middle';c.lineWidth=3.5;c.strokeStyle='rgba(20,18,12,.85)';const base=(v.draft&&C.tplLabel&&C.tplLabel[i])||td.name;const nm=base.length>14&&e<0.8?base.slice(0,13)+'…':base;c.strokeText(nm,0,-31);c.fillStyle='#f4ecd2';c.fillText(mineHere?'★ '+nm:nm,0,-31);}
+      if(e>=0.5){c.font="700 13px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.textAlign='center';c.textBaseline='middle';c.lineWidth=3.5;c.strokeStyle='rgba(20,18,12,.85)';const base=(v.draft&&C.tplLabel&&C.tplLabel[i])||td.name;const nm=base.length>24?base.slice(0,23)+'…':(base.length>14&&e<0.8?base.slice(0,13)+'…':base);c.strokeText(nm,0,-31);c.fillStyle='#f4ecd2';c.fillText(mineHere?'★ '+nm:nm,0,-31);}
       if(e>=0.5&&T.fort>0){c.fillStyle='#f4ecd2';c.strokeStyle='#000b';c.lineWidth=3;c.font="700 10px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.strokeText('요새'+'▮'.repeat(T.fort),36,-12);c.fillText('요새'+'▮'.repeat(T.fort),36,-12);}
       if(e>=0.5&&(T.trench||0)>0){c.fillStyle='#e8d9a8';c.strokeStyle='#000b';c.lineWidth=3;c.font="700 10px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.textAlign='center';c.strokeText('참호'+'▮'.repeat(T.trench),36,3);c.fillText('참호'+'▮'.repeat(T.trench),36,3);}
       if(e>=0.5&&T.city>0){c.fillStyle='#bfe3ff';c.strokeStyle='#000b';c.lineWidth=3;c.font="700 10px system-ui,'Malgun Gothic','Apple SD Gothic Neo',sans-serif";c.textAlign='center';c.strokeText('도시 Lv'+T.city,-36,-26);c.fillText('도시 Lv'+T.city,-36,-26);}
@@ -4390,7 +4390,7 @@ const Ed={
     let X0=1e9,Y0=1e9,X1=-1e9,Y1=-1e9;this.boxes.forEach(b=>{if(b[0]<X0)X0=b[0];if(b[1]<Y0)Y0=b[1];if(b[2]>X1)X1=b[2];if(b[3]>Y1)Y1=b[3];});this.bb=[X0,Y0,X1,Y1];},
   /* ---- 화면 구성 ---- */
   renderSide(){const st=this.st;const cnt=i=>st.owners.filter(o=>o===i).length;const act=st.nations[st.active];
-    const nations=st.nations.map((n,i)=>`<div class="ednat ${i===st.active?'on':''}" data-nat="${i}"><input type="color" value="${n.color}" data-edcolor="${i}" title="나라 색"><input class="nm" type="text" maxlength="14" value="${esc(n.name)}" data-edname="${i}"><span class="cnt" title="영토 수">${cnt(i)}곳</span><button class="btn sm" data-ed="delnat" data-i="${i}" title="이 나라 삭제" ${st.nations.length<=2?'disabled':''}>🗑</button></div>`).join('');
+    const nations=st.nations.map((n,i)=>`<div class="ednat ${i===st.active?'on':''}" data-nat="${i}"><input type="color" value="${n.color}" data-edcolor="${i}" title="나라 색"><input class="nm" type="text" maxlength="40" value="${esc(n.name)}" data-edname="${i}"><span class="cnt" title="영토 수">${cnt(i)}곳</span><button class="btn sm" data-ed="delnat" data-i="${i}" title="이 나라 삭제" ${st.nations.length<=2?'disabled':''}>🗑</button></div>`).join('');
     const capName=act&&act.cap!=null&&st.owners[act.cap]===st.active?this.tdef[act.cap].name:null;
     const rels=st.nations.map((n,j)=>{if(j===st.active)return '';let v=st.rel[this.key(st.active,j)]||'';if(v==='vlo'||v==='vhi'){const ov=v==='vlo'?Math.min(st.active,j):Math.max(st.active,j);v=ov===st.active?'vsof':'vsto';}return `<div class="edrel"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${n.color};margin-right:6px"></i>${esc(n.name)}</span><select data-edrel="${j}">${this.REL.map(([k,l])=>`<option value="${k}" ${v===k?'selected':''}>${l}</option>`).join('')}</select></div>`;}).join('');
     const hasWar=Object.values(st.rel).includes('war');
@@ -4492,7 +4492,7 @@ const Ed={
   fit(keep){const cv=this.cv;if(!cv||!this.bb)return;const w=cv.clientWidth||600,h=cv.clientHeight||500;const [x0,y0,x1,y1]=this.bb;const z=Math.min(w/(x1-x0),h/(y1-y0))*0.95;this.view={z,x:(w-(x1-x0)*z)/2-x0*z,y:(h-(y1-y0)*z)/2-y0*z};},
   zoomAt(sx,sy,f){const v=this.view;const nz=Math.max(0.2,Math.min(80,v.z*f));const k=nz/v.z;v.x=sx-(sx-v.x)*k;v.y=sy-(sy-v.y)*k;v.z=nz;this.draw();},
   draw(){const cv=this.cv;if(!cv||!this.paths)return;const c=cv.getContext('2d');const st=this.st,{x,y,z}=this.view,d=this.dpr;
-    c.setTransform(1,0,0,1,0,0);c.fillStyle='#0e2236';c.fillRect(0,0,cv.width,cv.height);c.setTransform(d*z,0,0,d*z,d*x,d*y);
+    c.setTransform(1,0,0,1,0,0);c.fillStyle='#16324d';c.fillRect(0,0,cv.width,cv.height);c.setTransform(d*z,0,0,d*z,d*x,d*y);
     /* 바다를 먼저, 땅을 나중에 그린다 (게임 화면과 같은 순서). 번호 순서로 섞어 그리면 바다 칸이 땅 위를 덮는다 */
     [true,false].forEach(sea=>this.paths.forEach((p,i)=>{const t=this.tdef[i];if(!!t.sea!==sea)return;const o=st.owners[i];c.fillStyle=t.sea?'#16324d':(o>=0?st.nations[o].color:'#c9bd93');c.fill(p,'evenodd');c.strokeStyle=t.sea?'rgba(120,170,210,.25)':'rgba(20,16,8,.55)';c.lineWidth=(t.sea?0.5:0.7)/z;c.stroke(p);}));
     st.nations.forEach((n,k)=>{if(n.cap!=null&&st.owners[n.cap]===k){const t=this.tdef[n.cap];c.fillStyle='#fff';c.strokeStyle='#000';c.lineWidth=1.2/z;c.beginPath();c.arc(t.x,t.y,5/z,0,6.3);c.fill();c.stroke();c.fillStyle='#000';c.font=`${9/z}px sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText('★',t.x,t.y+0.5/z);}});
