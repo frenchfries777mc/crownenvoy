@@ -364,7 +364,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 55</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 56</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
@@ -715,7 +715,7 @@ function mapBuild(i){if(_mapCache[i])return _mapCache[i];const m=MAPDATA[i];if(A
   const B=decRings(m.bg,m.q),LB=m.lb?decRings(m.lb,m.q):B,T=dropSlivers(m.terr.map((t,ti)=>((RINGFIX[i]||{})[ti])||(Array.isArray(t.rings)?t.rings:decRings(t.rings,m.q))),B);const pin=pinSet([...T,B,LB]);
   const geo={polys:T.map(r=>wiggle(r,pin)),adj:m.adj,sadj:m.sadj||[],bg:wiggle(B,pin),base:m.lb?wiggle(LB,pin):null};geo.base=geo.base||geo.bg;return(_mapCache[i]={tdef,geo});}
 let TDEF=null,GEO=null,MAPID=0;
-function ctName(tid){const tp=tid&&TEMPLATES.find(t=>t.id===tid);const nm=(tp&&!tp.custom&&tp.year!=null&&tp.year<=1453)?'Constantinople':'Istanbul';TDEF.forEach(td=>{if(td.name==='Istanbul'||td.name==='Constantinople')td.name=nm;});}
+function ctName(tid){const tp=tid&&TEMPLATES.find(t=>t.id===tid);const nm=(tp&&tp.year!=null&&tp.year<=1453&&(tp.custom?tp.year>=330:true))?'Constantinople':(tp&&tp.custom&&tp.year&&tp.year<330?'Byzantium':'Istanbul');TDEF.forEach(td=>{if(td.name==='Istanbul'||td.name==='Constantinople')td.name=nm;});}
 function setMap(i){i=MAPDATA[i]?i:0;MAPID=i;const m=mapBuild(i);TDEF=m.tdef;GEO=m.geo;let tp0=null;try{tp0=C.tplId;}catch(e){}ctName(tp0);}
 function resetMap(){delete _mapCache[MAPID];setMap(MAPID);}
 setMap(0);
@@ -3582,7 +3582,7 @@ const MapView={cv:null,ctx:null,W:0,H:0,dpr:1,scale:1,ox:0,oy:0,hover:-1,deco:[]
     const s=document.createElement('canvas');s.width=W;s.height=H;const c=s.getContext('2d');const g=c.createRadialGradient(W/2,H/2,H*.15,W/2,H/2,Math.max(W,H)*.7);g.addColorStop(0,'#1f3a46');g.addColorStop(1,'#0c161d');c.fillStyle=g;c.fillRect(0,0,W,H);
     c.strokeStyle='rgba(160,200,205,.06)';c.lineWidth=1;const r=rng(3);for(let i=0;i<120;i++){const x=r()*W,y=r()*H,l=14+r()*30;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+l/2,y-4,x+l,y);c.stroke();}
     this.sea=s;},
-  clampView(){const v=this.view;v.z=Math.max(1,Math.min(this.zmax,v.z));const mx=240,my=170;v.x=Math.max(1000*(1-v.z)-mx,Math.min(mx,v.x));v.y=Math.max(700*(1-v.z)-my,Math.min(my,v.y));this.layerKey='';},
+  clampView(){const v=this.view;v.z=Math.max(1,Math.min(this.zmax,v.z));const mx=240,my=170;v.x=Math.max(1000*(1-v.z)-mx,Math.min(mx,v.x));v.y=Math.max(700*(1-v.z)-my,Math.min(my,v.y));},
   zoomAt(e,f){const v=this.view;const old=v.z;const nz=Math.max(1,Math.min(this.zmax,old*f));if(nz===old)return;
     let mx=500,my=350;if(e){const r=this.cv.getBoundingClientRect();mx=(e.clientX-r.left-this.ox)/this.scale;my=(e.clientY-r.top-this.oy)/this.scale;}
     const px=(mx-v.x)/old,py=(my-v.y)/old;v.z=nz;v.x=mx-px*nz;v.y=my-py*nz;this.clampView();},
@@ -3645,10 +3645,14 @@ const MapView={cv:null,ctx:null,W:0,H:0,dpr:1,scale:1,ox:0,oy:0,hover:-1,deco:[]
     const v=C.view;const c=this.ctx;if(!v||!this.sea||$('#game').classList.contains('hidden')||!GEO||v.terr.length!==GEO.polys.length)return;const pl=v.players;const vw=this.view;
     c.setTransform(this.dpr,0,0,this.dpr,0,0);c.drawImage(this.sea,0,0,this.W,this.H);
     // 정적 층 캐시
-    const key=v.terr.map(t=>t.owner).join('')+v.players.map(p=>p.color).join('')+'|'+vw.z.toFixed(3)+'|'+vw.x.toFixed(1)+'|'+vw.y.toFixed(1)+'|'+this.W+'x'+this.H+'|'+MAPID;
-    if(key!==this.layerKey||!this.layer){const L=this.layer||(this.layer=document.createElement('canvas'));L.width=this.W*this.dpr;L.height=this.H*this.dpr;const lc=L.getContext('2d');lc.setTransform(this.dpr,0,0,this.dpr,0,0);lc.clearRect(0,0,this.W,this.H);
-      lc.save();lc.translate(this.ox,this.oy);lc.scale(this.scale,this.scale);lc.translate(vw.x,vw.y);lc.scale(vw.z,vw.z);this.drawStatic(lc,v,pl,this.scale*vw.z);lc.restore();this.layerKey=key;}
-    c.drawImage(this.layer,0,0,this.W,this.H);
+    /* 시점을 움직이는 동안(드래그·확대)은 정적 층을 다시 그리지 않고 만들어 둔 그림을 늘이거나 옮겨 쓴다. 움직임이 멈추면(0.12초) 선명하게 다시 그린다 */
+    const key=v.terr.map(t=>t.owner).join('')+v.players.map(p=>p.color).join('')+'|'+this.W+'x'+this.H+'|'+MAPID;
+    const vk=vw.z.toFixed(3)+'|'+vw.x.toFixed(1)+'|'+vw.y.toFixed(1);const tn=performance.now();if(vk!==this.lastVK){this.lastVK=vk;this.vkAt=tn;}
+    let tf=null;if(this.layer&&key===this.layerKey&&vk!==this.layerVK&&tn-this.vkAt<120){const L=this.layerV,a=vw.z/L.z,bx=this.ox*(1-a)+this.scale*(vw.x-a*L.x),by=this.oy*(1-a)+this.scale*(vw.y-a*L.y);
+      if(a>0.6&&a<1.7&&Math.abs(bx)<this.W*0.3&&Math.abs(by)<this.H*0.3)tf={a,bx,by};}
+    if(!tf&&(!this.layer||key!==this.layerKey||vk!==this.layerVK)){const L=this.layer||(this.layer=document.createElement('canvas'));L.width=this.W*this.dpr;L.height=this.H*this.dpr;const lc=L.getContext('2d');lc.setTransform(this.dpr,0,0,this.dpr,0,0);lc.clearRect(0,0,this.W,this.H);
+      lc.save();lc.translate(this.ox,this.oy);lc.scale(this.scale,this.scale);lc.translate(vw.x,vw.y);lc.scale(vw.z,vw.z);this.drawStatic(lc,v,pl,this.scale*vw.z);lc.restore();this.layerKey=key;this.layerVK=vk;this.layerV={z:vw.z,x:vw.x,y:vw.y};}
+    if(tf)c.drawImage(this.layer,tf.bx,tf.by,this.W*tf.a,this.H*tf.a);else c.drawImage(this.layer,0,0,this.W,this.H);
     c.save();c.translate(this.ox,this.oy);c.scale(this.scale,this.scale);c.translate(vw.x,vw.y);c.scale(vw.z,vw.z);c.lineJoin='round';
     // 외교 채널선 (확대해도 굵기·글자 크기가 일정하도록 1/z 로 보정)
     const uz=1/vw.z;
