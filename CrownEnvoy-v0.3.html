@@ -303,12 +303,17 @@ input[type=checkbox]{accent-color:var(--gold)}
 .ti details>summary{cursor:pointer;color:#ffd45e;font-size:13px;list-style:none}.ti details>summary::-webkit-details-marker{display:none}
 
 #lobbyRight{transition:width .18s}
-#lobbyRight.wide{width:min(940px,calc(100vw - 36px))}
-#lobbyRight.wide #tplBox{display:grid;grid-template-columns:minmax(240px,310px) 1fr;grid-template-areas:"list desc" "list info";grid-template-rows:auto 1fr;gap:6px 16px;align-items:start}
-#lobbyRight.wide #tplBox .tpls{grid-area:list;max-height:min(58vh,540px);overflow:auto;padding-right:4px}
+#lobbyRight.wide{width:min(1260px,calc(100vw - 36px))}#lobbyRight.wide .lobby-panel{background:#0b1428}
+#lobbyRight.wide #tplBox{display:grid;grid-template-columns:minmax(260px,340px) 1fr;grid-template-areas:"list desc" "list info";grid-template-rows:auto 1fr;gap:6px 16px;align-items:start}
+#lobbyRight.wide #tplBox .tpls{grid-area:list;max-height:min(70vh,720px);overflow:auto;padding-right:4px}
 #lobbyRight.wide #tplBox #tplDesc{grid-area:desc;margin:0}
 #lobbyRight.wide #tplBox #tplInfo{grid-area:info}
-#lobbyRight.wide .ti ol.tiEv{max-height:min(40vh,330px)}
+#lobbyRight.wide .ti ol.tiEv{max-height:min(46vh,430px)}
+@media (min-width:861px){
+#lobbyRight.wide #lobbyRoom .rscroll{display:grid;grid-template-columns:minmax(250px,310px) 1fr;grid-template-rows:auto auto auto 1fr;column-gap:24px;align-content:start}
+#lobbyRight.wide #lobbyRoom .plaque{grid-column:1;grid-row:1}#lobbyRight.wide #lobbyRoom .seats{grid-column:1;grid-row:2;margin-top:6px}#lobbyRight.wide #lobbyRoom #roomCount{grid-column:1;grid-row:3}
+#lobbyRight.wide #lobbyRoom .modeseg{grid-column:2;grid-row:1;margin-top:0}#lobbyRight.wide #lobbyRoom #tplBox{grid-column:2;grid-row:2 / span 2}#lobbyRight.wide #lobbyRoom #lenBox{grid-column:2;grid-row:4;align-self:start}
+}
 @media (max-width:860px){#lobbyRight.wide{width:min(560px,calc(100vw - 24px))}#lobbyRight.wide #tplBox{display:block}#lobbyRight.wide #tplBox .tpls{max-height:230px;overflow:auto}}
 
 #btnAuto{margin-right:10px;white-space:nowrap}#btnAuto.on{background:#7a5a22;border-color:#ffd45e;color:#fff}
@@ -364,7 +369,7 @@ window.ceReload=function(){try{sessionStorage.setItem('ce_noIntro','1');}catch(e
 try{if(sessionStorage.getItem('ce_noIntro')){sessionStorage.removeItem('ce_noIntro');el.style.display='none';go();}}catch(e){}})();</script>
 <div id="app">
  <div id="lobby" class="screen">
-  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 56</div>
+  <canvas id="lobbyBg"></canvas><canvas id="lobbyWar"></canvas><div id="verTag">v0.3 · build 57</div>
   <header class="brand"><h1>Crown Envoy</h1><div class="sub"><i></i>DIPLOMACY · WAR · EMPIRE<i></i></div></header>
   <div id="lobbyRight">
    <div id="lobbyHome" class="modes">
